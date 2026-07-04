@@ -331,9 +331,14 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
         <button id="reopen-btn" class="btn sm ghost" onclick="reopenSession()" style="display:none;flex-shrink:0;margin-left:8px">🔓 Reopen</button>
       </div>
 
-      <!-- End Session button — shown here so it's always visible without scrolling -->
+      <!-- End Session button -->
       <div id="end-sess-wrap" style="display:none;margin-bottom:14px">
         <button class="btn green" style="width:100%;padding:14px;font-size:14px" onclick="endSession()">✅ End &amp; Record Session</button>
+      </div>
+
+      <!-- Start New Session button (shown when session finalized) -->
+      <div id="start-new-wrap" style="display:none;margin-bottom:14px">
+        <button class="btn" style="width:100%;padding:14px;font-size:14px" onclick="startNewSession()">📅 Start New Session</button>
       </div>
 
       <!-- Attendance (coach only) -->
@@ -425,7 +430,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION = '4.1';
+const APP_VERSION = '4.2';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697';
 const _PH = 'babf47003c5a3f4132f08da13ede81342fede3a4bccaab727bb1e6d3bd08774e';
 const _AK = 'jfc-auth-v1';
@@ -505,6 +510,12 @@ function boot(role){
 
   if(!firebase.apps.length)firebase.initializeApp(_FB);
   _db=firebase.database();
+
+  // Test write permission — if this fails, Firebase rules are blocking saves
+  _db.ref('football/.test').set(1,e=>{
+    if(e){toast('⚠️ Firebase blocked: '+e.code);console.error('Firebase write denied for football/*:',e.message);}
+    else _db.ref('football/.test').remove();
+  });
 
   setDates();
   populateAwardSelects();
@@ -614,14 +625,18 @@ function postAnn(){
 }
 function delAnn(id){if(!confirm('Delete this announcement?'))return;_db.ref('football/announcements/'+id).remove()}
 
-// ── LOAD SESSION (real-time listener — no "could not load" errors) ────────────
+// ── LOAD SESSION ─────────────────────────────────────────────────────────────
 function loadSession(){
   const date=document.getElementById('sessDate').value;
   if(!date){toast('Pick a date first');return;}
-  // Detach previous listener
   if(_sessRef){_sessRef.off('value');_sessRef=null;}
   _att={};_awards={};_sessFinalized=false;
+  // Reset UI before listener fires
   document.getElementById('fin-badge').style.display='none';
+  document.getElementById('end-sess-wrap').style.display='none';
+  document.getElementById('start-new-wrap').style.display='none';
+  const rb=document.getElementById('reopen-btn');
+  if(rb)rb.style.display='none';
   renderAttGrid();
   renderAwardsSection();
   if(!_db)return;
@@ -634,16 +649,23 @@ function loadSession(){
     renderAttGrid();
     renderAwardsSection();
     const fb=document.getElementById('fin-badge');
+    const esw=document.getElementById('end-sess-wrap');
+    const snw=document.getElementById('start-new-wrap');
+    const rb2=document.getElementById('reopen-btn');
+    const isToday=date===iso(new Date());
     if(_sessFinalized){
       fb.style.display='flex';
       const finAt=d.finalizedAt?new Date(d.finalizedAt).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}):'';
-      document.getElementById('fin-date').textContent=finAt?'Recorded on '+finAt:'Attendance locked';
-      const rb=document.getElementById('reopen-btn');
-      if(rb)rb.style.display=_role==='coach'?'inline-block':'none';
+      document.getElementById('fin-date').textContent=finAt?'Recorded on '+finAt:'Session locked';
+      // Reopen only available on same day as the session
+      if(rb2)rb2.style.display=(_role==='coach'&&isToday)?'inline-block':'none';
+      if(esw)esw.style.display='none';
+      if(snw)snw.style.display=_role==='coach'?'block':'none';
     } else {
       fb.style.display='none';
-      const rb=document.getElementById('reopen-btn');
-      if(rb)rb.style.display='none';
+      if(rb2)rb2.style.display='none';
+      if(esw)esw.style.display=_role==='coach'?'block':'none';
+      if(snw)snw.style.display='none';
     }
   });
 }
@@ -651,27 +673,41 @@ function loadSession(){
 // ── END SESSION ───────────────────────────────────────────────────────────────
 function endSession(){
   const date=document.getElementById('sessDate').value;
-  if(!date)return toast('No session date selected');
-  if(!_db)return toast('Not connected — try refreshing');
-  const pres=Object.values(_att).filter(v=>v===true).length;
-  if(!confirm(`Record this session?\n\n${pres} of ${PLAYERS.length} players present.\n\nAttendance will be locked.`))return;
-  // Write finalized flag + full attendance snapshot in one update
-  const presentIds=Object.fromEntries(Object.entries(_att).filter(([,v])=>v===true));
-  const data={finalized:true,finalizedAt:Date.now()};
-  if(Object.keys(presentIds).length)data.attendance=presentIds;
-  _db.ref('football/sessions/'+date).update(data,err=>{
-    if(err){toast('Save failed — check Firebase rules: '+err.message);console.error('endSession',err);}
-    else{toast('Session recorded ✓');}
+  if(!date)return toast('No date selected');
+  if(!_db)return toast('Not connected — refresh the page');
+  const pres=PLAYERS.filter(p=>_att[p.id]===true).length;
+  if(!confirm(`Record session for ${dispFull(date)}?\n\n${pres} of ${PLAYERS.length} players present.\n\nThe session will be locked.`))return;
+  // Build full attendance snapshot — authoritative record
+  const attSnap={};
+  PLAYERS.forEach(p=>{if(_att[p.id]===true)attSnap[p.id]=true;});
+  // Write everything in one atomic update
+  _db.ref('football/sessions/'+date).update({
+    finalized:true,
+    finalizedAt:Date.now(),
+    attendance:attSnap,
+    awards:{potm:_awards.potm||'',ts:_awards.ts||'',bt:_awards.bt||''}
+  },err=>{
+    if(err){toast('Save failed ('+err.code+') — check Firebase rules');console.error('endSession:',err);}
+    else toast('Session recorded ✓');
   });
 }
 
-// ── REOPEN SESSION ────────────────────────────────────────────────────────────
+// ── REOPEN SESSION (same day only — permanently locked after midnight) ────────
 function reopenSession(){
   const date=document.getElementById('sessDate').value;
   if(!date)return;
-  if(!confirm('Reopen this session? Attendance and awards will become editable again.'))return;
-  _db.ref('football/sessions/'+date).update({finalized:false,finalizedAt:null});
-  toast('Session reopened');
+  if(date!==iso(new Date()))return toast('Past sessions are permanently locked');
+  if(!confirm('Reopen today\'s session? Attendance and awards will be editable again.'))return;
+  _db.ref('football/sessions/'+date).update({finalized:false,finalizedAt:null},err=>{
+    if(err)toast('Error: '+err.message);
+    else toast('Session reopened');
+  });
+}
+
+// ── START NEW SESSION ─────────────────────────────────────────────────────────
+function startNewSession(){
+  document.getElementById('sessDate').value=iso(new Date());
+  loadSession();
 }
 
 // ── AWARDS SECTION (edit vs read-only based on role + finalized state) ────────
