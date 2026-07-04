@@ -293,6 +293,11 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
         <div class="stat"><div class="stat-n" id="st-sessions">—</div><div class="stat-l">Sessions</div></div>
         <div class="stat"><div class="stat-n" id="st-att">—</div><div class="stat-l">Last Att.</div></div>
       </div>
+      <!-- Last session summary (populated by renderHomeStats) -->
+      <div id="home-last-session" style="display:none;margin-bottom:16px">
+        <div class="sh" style="margin-bottom:10px"><h2>Last Session</h2></div>
+        <div id="home-session-card"></div>
+      </div>
       <div class="sh"><h2>Latest Updates</h2></div>
       <div id="home-anns"><div class="empty"><div class="empty-i">📢</div><p>No updates yet</p></div></div>
     </section>
@@ -317,10 +322,11 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
         <button class="btn sm" onclick="loadSession()">Load</button>
       </div>
 
-      <!-- Finalized state badge -->
+      <!-- Finalized state badge + Reopen button -->
       <div id="fin-badge" class="fin-badge" style="display:none">
         <span style="font-size:22px;flex-shrink:0">✅</span>
-        <div><div class="fin-ttl">Session Recorded</div><div class="fin-sub" id="fin-date"></div></div>
+        <div style="flex:1"><div class="fin-ttl">Session Recorded</div><div class="fin-sub" id="fin-date"></div></div>
+        <button id="reopen-btn" class="btn sm ghost" onclick="reopenSession()" style="display:none;flex-shrink:0;margin-left:8px">🔓 Reopen</button>
       </div>
 
       <!-- End Session button — shown here so it's always visible without scrolling -->
@@ -458,7 +464,7 @@ const DRILLS = [
 ];
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let _role=null, _db=null, _att={}, _awards={}, _sessions={}, _sessFinalized=false;
+let _role=null, _db=null, _att={}, _awards={}, _sessions={}, _sessFinalized=false, _sessRef=null;
 
 // ── SHA-256 ───────────────────────────────────────────────────────────────────
 async function sha256(s){
@@ -491,8 +497,6 @@ function boot(role){
   if(role==='parent'){
     document.getElementById('att-section').style.display='none';
     document.getElementById('ann-form-wrap').style.display='none';
-    document.getElementById('awards-edit').style.display='none';
-    document.getElementById('awards-view').style.display='block';
     document.getElementById('plan-edit').style.display='none';
     document.getElementById('plan-view').style.display='block';
   }
@@ -541,15 +545,42 @@ function listenSessions(){
   });
 }
 
-// ── HOME STATS ────────────────────────────────────────────────────────────────
+// ── HOME STATS + LAST SESSION CARD ────────────────────────────────────────────
 function renderHomeStats(){
-  const finalized=Object.keys(_sessions).filter(d=>_sessions[d]&&_sessions[d].finalized).sort();
+  const finalized=Object.keys(_sessions).filter(d=>_sessions[d]&&_sessions[d].finalized===true).sort();
   document.getElementById('st-sessions').textContent=finalized.length||'0';
-  if(finalized.length){
-    const last=_sessions[finalized[finalized.length-1]];
-    const att=last.attendance||{};
-    document.getElementById('st-att').textContent=Object.values(att).filter(v=>v===true).length||'0';
+  const lsEl=document.getElementById('home-last-session');
+  if(!finalized.length){
+    document.getElementById('st-att').textContent='—';
+    lsEl.style.display='none';
+    return;
   }
+  const lastDate=finalized[finalized.length-1];
+  const s=_sessions[lastDate];
+  const att=s.attendance||{};
+  const aw=s.awards||{};
+  const present=PLAYERS.filter(p=>att[p.id]===true);
+  document.getElementById('st-att').textContent=present.length;
+  const pName=id=>PLAYERS.find(p=>p.id===id)?.name.split(' ')[0]||'';
+  const pct=Math.round(present.length/PLAYERS.length*100);
+  const awHtml=[[aw.potm,'⭐ PoM'],[aw.ts,'⚽ Top Scorer'],[aw.bt,'🤝 Teammate']]
+    .filter(([id])=>id)
+    .map(([id,lbl])=>`<span class="hist-aw-chip">${lbl}: ${x(pName(id))}</span>`)
+    .join('');
+  const namesHtml=present.length
+    ?present.map(p=>`<span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--green-dim);color:#66BB6A;border:1px solid rgba(67,160,71,.3)">${x(p.name.split(' ')[0])}</span>`).join('')
+    :'<span style="font-size:12px;color:var(--t3)">No one recorded</span>';
+  document.getElementById('home-session-card').innerHTML=`
+    <div class="card" style="margin-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:13px;font-weight:700">${dispFull(lastDate)}</span>
+        <span class="hist-pct">${pct}%</span>
+      </div>
+      ${awHtml?`<div class="hist-aw" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">${awHtml}</div>`:''}
+      <div class="card-ttl" style="margin-bottom:8px">Attended (${present.length}/${PLAYERS.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${namesHtml}</div>
+    </div>`;
+  lsEl.style.display='block';
 }
 
 // ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────────
@@ -581,33 +612,38 @@ function postAnn(){
 }
 function delAnn(id){if(!confirm('Delete this announcement?'))return;_db.ref('football/announcements/'+id).remove()}
 
-// ── LOAD SESSION ──────────────────────────────────────────────────────────────
+// ── LOAD SESSION (real-time listener — no "could not load" errors) ────────────
 function loadSession(){
   const date=document.getElementById('sessDate').value;
   if(!date){toast('Pick a date first');return;}
+  // Detach previous listener
+  if(_sessRef){_sessRef.off('value');_sessRef=null;}
   _att={};_awards={};_sessFinalized=false;
   document.getElementById('fin-badge').style.display='none';
-  renderAttGrid(); // button visibility handled inside renderAttGrid
+  renderAttGrid();
+  renderAwardsSection();
   if(!_db)return;
-  _db.ref('football/sessions/'+date).once('value',snap=>{
+  _sessRef=_db.ref('football/sessions/'+date);
+  _sessRef.on('value',snap=>{
     const d=snap.val()||{};
     _att=d.attendance||{};
     _awards=d.awards||{};
     _sessFinalized=d.finalized===true;
-    renderAttGrid(); // updates button + attendance rows
+    renderAttGrid();
+    renderAwardsSection();
+    const fb=document.getElementById('fin-badge');
     if(_sessFinalized){
-      document.getElementById('fin-badge').style.display='flex';
+      fb.style.display='flex';
       const finAt=d.finalizedAt?new Date(d.finalizedAt).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}):'';
       document.getElementById('fin-date').textContent=finAt?'Recorded on '+finAt:'Attendance locked';
-    }
-    if(_role==='coach'){
-      document.getElementById('awPotm').value=_awards.potm||'';
-      document.getElementById('awTs').value=_awards.ts||'';
-      document.getElementById('awBt').value=_awards.bt||'';
+      const rb=document.getElementById('reopen-btn');
+      if(rb)rb.style.display=_role==='coach'?'inline-block':'none';
     } else {
-      renderAwardCards();
+      fb.style.display='none';
+      const rb=document.getElementById('reopen-btn');
+      if(rb)rb.style.display='none';
     }
-  },()=>toast('Could not load — check connection'));
+  });
 }
 
 // ── END SESSION ───────────────────────────────────────────────────────────────
@@ -615,14 +651,32 @@ function endSession(){
   const date=document.getElementById('sessDate').value;
   if(!date)return toast('No session date selected');
   const pres=Object.values(_att).filter(v=>v===true).length;
-  if(!confirm(`Record this session (${pres}/${PLAYERS.length} present)?\n\nAttendance will be locked and added to history.`))return;
-  _db.ref('football/sessions/'+date).update({finalized:true,finalizedAt:Date.now()},()=>{
-    _sessFinalized=true;
-    document.getElementById('fin-badge').style.display='flex';
-    document.getElementById('fin-date').textContent='Recorded now — attendance locked';
-    renderAttGrid(); // hides button + locks rows
-    toast('Session recorded ✓');
-  });
+  if(!confirm(`Record this session?\n\n${pres} of ${PLAYERS.length} players present.\n\nAttendance will be locked.`))return;
+  _db.ref('football/sessions/'+date).update({finalized:true,finalizedAt:Date.now()});
+  toast('Session recorded ✓');
+}
+
+// ── REOPEN SESSION ────────────────────────────────────────────────────────────
+function reopenSession(){
+  const date=document.getElementById('sessDate').value;
+  if(!date)return;
+  if(!confirm('Reopen this session? Attendance and awards will become editable again.'))return;
+  _db.ref('football/sessions/'+date).update({finalized:false,finalizedAt:null});
+  toast('Session reopened');
+}
+
+// ── AWARDS SECTION (edit vs read-only based on role + finalized state) ────────
+function renderAwardsSection(){
+  const showEdit=_role==='coach'&&!_sessFinalized;
+  document.getElementById('awards-edit').style.display=showEdit?'block':'none';
+  document.getElementById('awards-view').style.display=showEdit?'none':'block';
+  if(showEdit){
+    document.getElementById('awPotm').value=_awards.potm||'';
+    document.getElementById('awTs').value=_awards.ts||'';
+    document.getElementById('awBt').value=_awards.bt||'';
+  } else {
+    renderAwardCards();
+  }
 }
 
 // ── ATTENDANCE ────────────────────────────────────────────────────────────────
@@ -643,7 +697,6 @@ function renderAttGrid(){
   }
   document.getElementById('att-body').innerHTML=html;
   updAttSum();
-  // Single source of truth for button visibility — no need for show/hide anywhere else
   const _esw=document.getElementById('end-sess-wrap');
   if(_esw) _esw.style.display=(_role==='coach'&&!_sessFinalized)?'block':'none';
 }
@@ -732,9 +785,10 @@ function populateAwardSelects(){
 }
 function saveAwards(){
   const date=document.getElementById('sessDate').value;if(!date)return toast('Select a date first');
-  _awards={potm:document.getElementById('awPotm').value,ts:document.getElementById('awTs').value,bt:document.getElementById('awBt').value};
-  _db.ref('football/sessions/'+date+'/awards').set(_awards);
+  const aw={potm:document.getElementById('awPotm').value,ts:document.getElementById('awTs').value,bt:document.getElementById('awBt').value};
+  _db.ref('football/sessions/'+date+'/awards').set(aw);
   toast('Awards saved ✓');
+  // listener will update _awards + renderAwardsSection automatically
 }
 function renderAwardCards(){
   const cats=[{key:'potm',cls:'potm',ico:'⭐',label:'Player of the Match'},{key:'ts',cls:'ts',ico:'⚽',label:'Top Scorer'},{key:'bt',cls:'bt',ico:'🤝',label:'Best Teammate'}];
