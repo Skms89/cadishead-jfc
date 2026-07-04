@@ -92,6 +92,8 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 .btn.sm{padding:8px 14px;font-size:12px;box-shadow:none}
 .btn.green{background:var(--green);box-shadow:0 3px 14px rgba(67,160,71,.4)}
 .btn.green:hover{background:#4CAF50}
+.btn.ghost{background:transparent;border:1.5px solid rgba(255,255,255,.25);box-shadow:none;color:var(--text)}
+.btn.ghost:hover{background:rgba(255,255,255,.08)}
 
 .fi,.fta,.fsel{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:12px 14px;outline:none;transition:border-color .2s,background .2s;margin-bottom:8px}
 .fta{resize:vertical;min-height:72px}
@@ -423,7 +425,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION = '4.0';
+const APP_VERSION = '4.1';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697';
 const _PH = 'babf47003c5a3f4132f08da13ede81342fede3a4bccaab727bb1e6d3bd08774e';
 const _AK = 'jfc-auth-v1';
@@ -650,10 +652,17 @@ function loadSession(){
 function endSession(){
   const date=document.getElementById('sessDate').value;
   if(!date)return toast('No session date selected');
+  if(!_db)return toast('Not connected — try refreshing');
   const pres=Object.values(_att).filter(v=>v===true).length;
   if(!confirm(`Record this session?\n\n${pres} of ${PLAYERS.length} players present.\n\nAttendance will be locked.`))return;
-  _db.ref('football/sessions/'+date).update({finalized:true,finalizedAt:Date.now()});
-  toast('Session recorded ✓');
+  // Write finalized flag + full attendance snapshot in one update
+  const presentIds=Object.fromEntries(Object.entries(_att).filter(([,v])=>v===true));
+  const data={finalized:true,finalizedAt:Date.now()};
+  if(Object.keys(presentIds).length)data.attendance=presentIds;
+  _db.ref('football/sessions/'+date).update(data,err=>{
+    if(err){toast('Save failed — check Firebase rules: '+err.message);console.error('endSession',err);}
+    else{toast('Session recorded ✓');}
+  });
 }
 
 // ── REOPEN SESSION ────────────────────────────────────────────────────────────
