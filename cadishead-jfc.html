@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#06101d">
+<title>Cadishead Sports JFC</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="logo" viewBox="0 0 320 72">
+    <!-- white background -->
+    <rect width="320" height="72" fill="#fff" rx="4"/>
+    <!-- left text block (fits in 0-118) -->
+    <text x="7" y="27" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="16" fill="#111" letter-spacing="0">CADISHEAD</text>
+    <text x="7" y="55" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="16" fill="#111" letter-spacing="0">SPORTS</text>
+    <!-- blue JFC block: x=118 to x=215, width=97 — JFC centered inside -->
+    <rect x="118" y="0" width="97" height="72" fill="#1565C0"/>
+    <text x="166" y="50" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="34" fill="#fff" text-anchor="middle">JFC</text>
+    <!-- dark crest block: x=215 to x=320 -->
+    <rect x="215" y="0" width="105" height="72" fill="#07101e"/>
+    <path d="M222,5 L308,5 L308,46 L265,66 L222,46 Z" fill="#0d1e44" stroke="#c9a030" stroke-width="2"/>
+    <path d="M228,10 L302,10 L302,44 L265,61 L228,44 Z" fill="none" stroke="#c9a030" stroke-width="0.8" opacity="0.5"/>
+    <path d="M247,17 L252,24 L258,17 L265,14 L272,17 L278,24 L283,17 L285,27 L245,27 Z" fill="#c9a030"/>
+    <rect x="222" y="36" width="86" height="7" fill="#c9a030" opacity="0.35"/>
+    <text x="265" y="57" font-family="Arial,sans-serif" font-weight="700" font-size="6" fill="#c9a030" text-anchor="middle" letter-spacing="0.8">CADISHEAD JFC</text>
+  </symbol>
+</svg>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#06101d;--bg2:#0b1a30;--card:#101f3a;--card2:#162848;
+  --border:rgba(255,255,255,0.07);--pri:#1565C0;--pri-lt:#2196F3;
+  --gold:#F0C040;--gold-dim:rgba(240,192,64,0.1);--gold-border:rgba(240,192,64,0.3);
+  --text:#ECF1FF;--t2:#7B90B8;--t3:#3a4d6a;
+  --green:#43A047;--green-dim:rgba(67,160,71,0.12);--red:#E53935;
+  --r:18px;--rs:12px;
+  --shadow:0 4px 24px rgba(0,0,0,.45);--shadow-sm:0 2px 12px rgba(0,0,0,.35);
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+#lock{position:fixed;inset:0;background:linear-gradient(160deg,#06101d 0%,#09183a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;padding:32px 24px}
+#lock.off{display:none}
+.lk-logo{border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.08);margin-bottom:28px}
+.lk-sub{font-size:13px;color:var(--t2);text-align:center;margin-bottom:32px;letter-spacing:.2px}
+.lk-form{width:100%;max-width:300px;display:flex;flex-direction:column;gap:10px}
+.lk-input{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:16px;font-family:'Inter',sans-serif;padding:15px 18px;outline:none;transition:border-color .2s,background .2s}
+.lk-input:focus{border-color:var(--pri);background:rgba(21,101,192,.08)}
+.lk-btn{background:var(--pri);border:none;border-radius:var(--r);color:#fff;font-size:15px;font-weight:700;padding:15px;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.3px;transition:background .15s,transform .1s,box-shadow .15s;box-shadow:0 4px 20px rgba(21,101,192,.5)}
+.lk-btn:active{transform:scale(.98)}
+.lk-err{color:#FF5252;font-size:12px;text-align:center;min-height:16px}
+
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
+#app.off{display:none}
+
+.hdr{background:rgba(6,16,29,0.97);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr-logo{border-radius:5px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.hdr-role{font-size:10px;font-weight:700;padding:5px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
+.hdr-role.coach{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
+.hdr-role.parent{background:rgba(33,150,243,.15);color:#64B5F6;border:1px solid rgba(33,150,243,.35)}
+
+.body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+.nav{background:rgba(6,16,29,0.97);border-top:1px solid var(--border);display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom)) 6px;gap:3px;flex-shrink:0}
+.nb{flex:1;background:none;border:none;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 2px;cursor:pointer;color:var(--t3);font-size:8.5px;font-weight:600;-webkit-tap-highlight-color:transparent;transition:background .2s,color .2s}
+.nb.on{background:rgba(33,150,243,.12);color:#64B5F6}
+.nb .ni{font-size:18px;line-height:1}
+
+.pnl{display:none;padding:16px 14px 20px}.pnl.on{display:block}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-sm);padding:16px;margin-bottom:12px}
+.card-ttl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t2);margin-bottom:12px}
+
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sh h2{font-size:20px;font-weight:800;letter-spacing:-.3px}
+
+.grp-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:18px 0 8px;display:flex;align-items:center;gap:8px}
+.grp-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+
+hr{border:none;border-top:1px solid var(--border);margin:18px 0}
+
+.btn{background:var(--pri);border:none;border-radius:var(--rs);color:#fff;font-size:13px;font-weight:700;padding:11px 20px;letter-spacing:.2px;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s,transform .1s,box-shadow .15s;box-shadow:0 3px 12px rgba(21,101,192,.4)}
+.btn:hover{background:var(--pri-lt)}.btn:active{transform:scale(.97)}
+.btn.sm{padding:8px 14px;font-size:12px;box-shadow:none}
+.btn.green{background:var(--green);box-shadow:0 3px 14px rgba(67,160,71,.4)}
+.btn.green:hover{background:#4CAF50}
+
+.fi,.fta,.fsel{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:12px 14px;outline:none;transition:border-color .2s,background .2s;margin-bottom:8px}
+.fta{resize:vertical;min-height:72px}
+.fi:focus,.fta:focus,.fsel:focus{border-color:var(--pri);background:rgba(21,101,192,.06)}
+.fsel option{background:#0b1930}
+.date-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.date-row .fi{margin:0;flex:1}
+
+/* HOME */
+.home-logo{display:flex;justify-content:center;margin-bottom:18px;padding-top:2px}
+.home-logo svg{border-radius:8px;box-shadow:0 6px 32px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.07)}
+.next-card{background:linear-gradient(135deg,#0b2054 0%,#0d47a1 70%,#1565C0 100%);border:none;border-radius:var(--r);padding:22px 20px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(13,71,161,.5),0 0 0 1px rgba(255,255,255,.06)}
+.next-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(255,255,255,.06) 0%,transparent 70%);pointer-events:none}
+.next-card::after{content:'⚽';position:absolute;right:16px;bottom:-2px;font-size:72px;opacity:.08;pointer-events:none}
+.nc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:#90CAF9;margin-bottom:6px}
+.nc-date{font-size:20px;font-weight:800;color:#fff;margin-bottom:3px;line-height:1.2;letter-spacing:-.3px}
+.nc-time{font-size:13px;color:#B3D4F8;margin-bottom:14px}
+.nc-loc{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:500;color:#fff}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 8px;text-align:center;box-shadow:var(--shadow-sm)}
+.stat-n{font-size:24px;font-weight:800;letter-spacing:-.5px}
+.stat-l{font-size:9px;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
+
+/* ANNOUNCEMENTS */
+.ann{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;position:relative;box-shadow:var(--shadow-sm)}
+.ann-badge{display:inline-block;background:var(--pri);color:#fff;font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.ann-text{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:6px}
+.ann-meta{font-size:11px;color:var(--t3)}
+.ann-del{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--t3);font-size:16px;cursor:pointer;padding:4px;border-radius:6px;transition:color .15s,background .15s}
+.ann-del:hover{color:var(--red);background:rgba(229,57,53,.1)}
+
+/* FINALIZED BADGE */
+.fin-badge{display:flex;align-items:center;gap:12px;background:rgba(67,160,71,.12);border:1px solid rgba(67,160,71,.3);border-radius:var(--rs);padding:13px 16px;margin-bottom:14px}
+.fin-ttl{font-size:13px;font-weight:700;color:#66BB6A}
+.fin-sub{font-size:11px;color:var(--t2);margin-top:2px}
+
+/* ATTENDANCE */
+.att-sum{background:rgba(67,160,71,.1);border:1px solid rgba(67,160,71,.25);border-radius:var(--rs);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.att-sum span{font-size:13px;color:var(--t2);font-weight:500}
+.att-sum strong{color:var(--green);font-weight:700;font-size:15px}
+.att-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;margin-bottom:7px;background:var(--card);border:1.5px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .18s,background .18s,box-shadow .18s;box-shadow:var(--shadow-sm)}
+.att-row.p{border-color:var(--green);background:var(--green-dim);box-shadow:0 2px 14px rgba(67,160,71,.2)}
+.att-row.locked{cursor:default}
+.att-chk{width:28px;height:28px;border-radius:8px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;color:transparent;transition:all .18s}
+.att-row.p .att-chk{border-color:var(--green);background:var(--green);color:#fff}
+.att-nm{font-size:14px;font-weight:600;color:var(--text)}
+.att-badge{font-size:11px;font-weight:600;color:var(--t3)}
+.att-row.p .att-badge{color:var(--green)}
+
+/* SESSION AWARDS */
+.award-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.award-card{border-radius:16px;padding:14px 8px;text-align:center;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.award-card.potm{background:var(--gold-dim);border-color:var(--gold-border)}
+.award-card.ts{background:rgba(21,101,192,.1);border-color:rgba(21,101,192,.35)}
+.award-card.bt{background:var(--green-dim);border-color:rgba(67,160,71,.3)}
+.aw-ico{font-size:24px;margin-bottom:5px}
+.aw-cat{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t2);margin-bottom:6px;line-height:1.3}
+.aw-name{font-size:13px;font-weight:700;color:var(--text)}
+.aw-name.empty{color:var(--t3);font-weight:400;font-size:11px}
+.award-edit-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.award-edit-row label{font-size:14px;flex-shrink:0;width:24px;text-align:center}
+.award-edit-row .fsel{margin:0;flex:1;font-size:13px;padding:10px 12px}
+
+/* SESSION PLAN */
+.plan-s{margin-bottom:14px}
+.plan-s label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--t2);margin-bottom:7px}
+.pv{background:var(--card);border-left:3px solid var(--pri);border-radius:0 var(--rs) var(--rs) 0;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow-sm)}
+.pv-l{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--t3);margin-bottom:4px;letter-spacing:.6px}
+.pv-t{font-size:13px;color:var(--text);line-height:1.6}
+
+/* SQUAD */
+.sq-wrap{margin-bottom:8px}
+.sq-c{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:border-color .2s,box-shadow .2s;box-shadow:var(--shadow-sm)}
+.sq-c.open{border-color:var(--pri);border-radius:var(--r) var(--r) 0 0;margin-bottom:0;box-shadow:none}
+.sq-av{width:42px;height:42px;background:linear-gradient(135deg,var(--pri-lt),#0d47a1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 2px 10px rgba(21,101,192,.4)}
+.sq-info{flex:1;min-width:0}
+.sq-nm{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sq-sb{font-size:11px;color:var(--t2);margin-top:2px}
+.sq-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.kit-y{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(67,160,71,.2);color:#66BB6A;border:1px solid rgba(67,160,71,.3)}
+.kit-n{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(255,152,0,.2);color:#FFA726;border:1px solid rgba(255,152,0,.3)}
+.sq-arr{font-size:12px;color:var(--t3);transition:transform .25s;line-height:1;margin-left:2px}
+.sq-c.open .sq-arr{transform:rotate(180deg);color:var(--pri-lt)}
+.sq-detail{display:none;background:var(--bg2);border:1px solid var(--pri);border-top:none;border-radius:0 0 var(--r) var(--r);padding:16px}
+.sq-detail.open{display:block}
+.pg-add .fta{margin-bottom:6px;min-height:60px}
+.pg-add-row{display:flex;gap:8px;align-items:center}
+.pg-add-row .fi{margin:0;flex:1;padding:9px 12px;font-size:13px}
+.pg-item{background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:7px;position:relative;box-shadow:var(--shadow-sm)}
+.pg-date{font-size:11px;color:var(--pri-lt);font-weight:600;margin-bottom:4px}
+.pg-text{font-size:13px;color:var(--text);line-height:1.55;padding-right:26px}
+.pg-del{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;padding:3px;border-radius:5px;transition:color .15s}
+.pg-del:hover{color:var(--red)}
+
+/* PLAYER ATTENDANCE SUMMARY */
+.att-stat-card{display:flex;align-items:center;gap:16px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:14px;margin-bottom:12px}
+.att-big-pct{font-size:36px;font-weight:800;line-height:1;letter-spacing:-1px;flex-shrink:0}
+.att-big-pct.hi{color:#66BB6A}
+.att-big-pct.mid{color:#FFA726}
+.att-big-pct.lo{color:rgba(229,57,53,.7)}
+.att-big-pct span{font-size:16px;font-weight:600;color:var(--t2)}
+.att-stat-right{flex:1;min-width:0}
+.att-stat-lbl{font-size:11px;color:var(--t2);margin-bottom:7px}
+.att-pbar{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.att-pbar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.att-pbar-fill.hi{background:linear-gradient(90deg,var(--green),#81C784)}
+.att-pbar-fill.mid{background:linear-gradient(90deg,#F57C00,#FFA726)}
+.att-pbar-fill.lo{background:linear-gradient(90deg,#C62828,#E53935)}
+
+.sess-dots{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.sess-dot{width:46px;border-radius:10px;padding:7px 4px 5px;text-align:center;font-size:13px;font-weight:700}
+.sess-dot.p{background:rgba(67,160,71,.18);color:#66BB6A}
+.sess-dot.a{background:rgba(229,57,53,.1);color:rgba(229,57,53,.55)}
+.sess-dot-d{font-size:8px;color:var(--t3);margin-top:3px;line-height:1}
+
+/* HISTORY */
+.hist-entry{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.hist-hdr{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.hist-left{flex:1;min-width:0}
+.hist-date{font-size:14px;font-weight:700;color:var(--text)}
+.hist-sub{font-size:11px;color:var(--t2);margin-top:3px}
+.hist-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.hist-pct{font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;background:rgba(67,160,71,.18);color:#66BB6A}
+.hist-arr{font-size:11px;color:var(--t3);transition:transform .22s;margin-left:2px}
+.hist-body{padding:14px 16px;border-top:1px solid var(--border)}
+.hist-grp{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin:10px 0 7px}
+.hist-grp:first-child{margin-top:0}
+.hist-pl{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:13px}
+.hist-pl:last-child{border-bottom:none}
+.hist-chk{width:19px;height:19px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.hist-chk.y{background:rgba(67,160,71,.2);color:#66BB6A}
+.hist-chk.n{background:rgba(229,57,53,.12);color:rgba(229,57,53,.6)}
+.hist-pl-nm{color:var(--text)}
+.hist-pl.absent .hist-pl-nm{color:var(--t3)}
+.hist-aw{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+.hist-aw-chip{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
+
+/* DRILLS */
+.drill-intro{font-size:13px;color:var(--t2);line-height:1.65;margin-bottom:14px;padding:13px 15px;background:var(--card);border-radius:var(--r);border-left:3px solid var(--pri);box-shadow:var(--shadow-sm)}
+.drill-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.drill-hdr{display:flex;align-items:flex-start;gap:13px;margin-bottom:12px}
+.drill-ico{font-size:32px;flex-shrink:0;line-height:1;margin-top:1px}
+.drill-name{font-size:15px;font-weight:800;letter-spacing:-.2px;margin-bottom:7px}
+.drill-tags{display:flex;gap:5px;flex-wrap:wrap}
+.dtag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px}
+.dtag.easy{background:rgba(67,160,71,.2);color:#66BB6A}
+.dtag.med{background:rgba(255,152,0,.2);color:#FFA726}
+.dtag.time{background:rgba(33,150,243,.15);color:#64B5F6}
+.dtag.kit{background:rgba(255,255,255,.06);color:var(--t2)}
+.drill-steps{padding-left:18px;margin:0 0 10px}
+.drill-steps li{font-size:13px;color:var(--t2);padding:3px 0;line-height:1.5}
+.drill-steps li::marker{color:var(--pri-lt);font-weight:700}
+.drill-why{font-size:12px;color:var(--t3);border-top:1px solid var(--border);padding-top:9px}
+.drill-why b{color:var(--pri-lt);font-weight:600}
+
+.empty{text-align:center;padding:36px 20px;color:var(--t3)}
+.empty-i{font-size:36px;margin-bottom:10px}.empty p{font-size:13px}
+
+#toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--pri);color:var(--text);border-radius:var(--rs);padding:10px 22px;font-size:13px;font-weight:600;z-index:900;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+#toast.on{opacity:1}
+
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- LOCK -->
+<div id="lock">
+  <div class="lk-logo"><svg width="260" height="58"><use href="#logo"/></svg></div>
+  <div class="lk-sub">Saturday 10:00 · Irlam &amp; Cadishead Academy</div>
+  <div class="lk-form">
+    <input id="pwdIn" class="lk-input" type="password" placeholder="Enter password" autocomplete="current-password">
+    <button class="lk-btn" onclick="tryUnlock()">Unlock</button>
+    <div class="lk-err" id="lkErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="off">
+  <header class="hdr">
+    <div class="hdr-logo"><svg width="148" height="33"><use href="#logo"/></svg></div>
+    <div class="hdr-role" id="roleTag"></div>
+  </header>
+
+  <main class="body">
+
+    <!-- HOME -->
+    <section class="pnl on" id="p-home">
+      <div class="home-logo"><svg width="240" height="54"><use href="#logo"/></svg></div>
+      <div class="next-card">
+        <div class="nc-lbl">Next Session</div>
+        <div class="nc-date" id="nextDate">—</div>
+        <div class="nc-time">Saturday · 10:00 AM</div>
+        <div class="nc-loc">📍 Irlam &amp; Cadishead Academy</div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-n">10</div><div class="stat-l">Players</div></div>
+        <div class="stat"><div class="stat-n" id="st-sessions">—</div><div class="stat-l">Sessions</div></div>
+        <div class="stat"><div class="stat-n" id="st-att">—</div><div class="stat-l">Last Att.</div></div>
+      </div>
+      <div class="sh"><h2>Latest Updates</h2></div>
+      <div id="home-anns"><div class="empty"><div class="empty-i">📢</div><p>No updates yet</p></div></div>
+    </section>
+
+    <!-- UPDATES -->
+    <section class="pnl" id="p-ann">
+      <div class="sh"><h2>Announcements</h2></div>
+      <div id="ann-form-wrap" class="card" style="margin-bottom:16px">
+        <div class="card-ttl">Post Update for Parents</div>
+        <input class="fi" type="text" id="annTitle" placeholder="Title (e.g. This Saturday reminder)">
+        <textarea class="fta" id="annText" placeholder="Message for parents…"></textarea>
+        <button class="btn" onclick="postAnn()">Post Announcement</button>
+      </div>
+      <div id="ann-list"><div class="empty"><div class="empty-i">📢</div><p>No announcements yet</p></div></div>
+    </section>
+
+    <!-- SESSION -->
+    <section class="pnl" id="p-session">
+      <div class="sh"><h2>Session</h2></div>
+      <div class="date-row">
+        <input class="fi" type="date" id="sessDate">
+        <button class="btn sm" onclick="loadSession()">Load</button>
+      </div>
+
+      <!-- Finalized state badge -->
+      <div id="fin-badge" class="fin-badge" style="display:none">
+        <span style="font-size:22px;flex-shrink:0">✅</span>
+        <div><div class="fin-ttl">Session Recorded</div><div class="fin-sub" id="fin-date"></div></div>
+      </div>
+
+      <!-- End Session button — shown here so it's always visible without scrolling -->
+      <div id="end-sess-wrap" style="display:none;margin-bottom:14px">
+        <button class="btn green" style="width:100%;padding:14px;font-size:14px" onclick="endSession()">✅ End &amp; Record Session</button>
+      </div>
+
+      <!-- Attendance (coach only) -->
+      <div id="att-section">
+        <div class="card-ttl" style="margin-bottom:10px">📋 Attendance — tap to mark present</div>
+        <div class="att-sum" id="attSum" style="display:none">
+          <span>Present: <strong id="attPres">0</strong></span>
+          <span id="attTotal" style="color:var(--t3)">of 10</span>
+        </div>
+        <div id="att-body"></div>
+      </div>
+
+      <!-- Awards -->
+      <div id="awards-section" style="margin-top:16px">
+        <div id="awards-edit" class="card">
+          <div class="card-ttl">🏅 Session Awards</div>
+          <div class="award-edit-row">
+            <label>⭐</label>
+            <select class="fsel" id="awPotm"><option value="">— Player of the Match —</option></select>
+          </div>
+          <div class="award-edit-row">
+            <label>⚽</label>
+            <select class="fsel" id="awTs"><option value="">— Top Scorer —</option></select>
+          </div>
+          <div class="award-edit-row" style="margin-bottom:14px">
+            <label>🤝</label>
+            <select class="fsel" id="awBt"><option value="">— Best Teammate —</option></select>
+          </div>
+          <button class="btn" onclick="saveAwards()">Save Awards</button>
+        </div>
+        <div id="awards-view" style="display:none">
+          <div class="card-ttl" style="margin-bottom:10px">🏅 Session Awards</div>
+          <div id="awards-display"></div>
+        </div>
+      </div>
+
+      <!-- Session History -->
+      <hr>
+      <div class="sh"><h2>Session History</h2></div>
+      <div id="history-list">
+        <div class="empty"><div class="empty-i">📋</div><p>No sessions recorded yet</p></div>
+      </div>
+    </section>
+
+    <!-- PLAN -->
+    <section class="pnl" id="p-plan">
+      <div class="sh"><h2>Session Plan</h2></div>
+      <div class="date-row">
+        <input class="fi" type="date" id="planDate">
+        <button class="btn sm" onclick="loadPlan()">Load</button>
+      </div>
+      <div id="plan-edit" class="card">
+        <div class="card-ttl">Edit Plan</div>
+        <div class="plan-s"><label>🏃 Warm-Up</label><textarea class="fta" id="plWarm" placeholder="e.g. Ball familiarisation, dribbling around cones…"></textarea></div>
+        <div class="plan-s"><label>⚽ Part 1 — Drill</label><textarea class="fta" id="plD1" placeholder="e.g. Passing pairs — 5 m apart, alternate feet…"></textarea></div>
+        <div class="plan-s"><label>🎯 Part 2 — Practice</label><textarea class="fta" id="plD2" placeholder="e.g. Small-sided possession game, 3v3…"></textarea></div>
+        <div class="plan-s"><label>🏆 Part 3 — Match</label><textarea class="fta" id="plCool" placeholder="e.g. 5v5 match, rotate teams every 5 minutes…"></textarea></div>
+        <div class="plan-s"><label>📝 Coach's Notes (private)</label><textarea class="fta" id="plNotes" placeholder="Private notes — not visible to parents…"></textarea></div>
+        <button class="btn" onclick="savePlan()">Save Plan</button>
+      </div>
+      <div id="plan-view" style="display:none"></div>
+    </section>
+
+    <!-- SQUAD -->
+    <section class="pnl" id="p-squad">
+      <div class="sh"><h2>Squad</h2></div>
+      <div id="squad-list"></div>
+    </section>
+
+    <!-- DRILLS -->
+    <section class="pnl" id="p-drills">
+      <div class="sh"><h2>Home Drills</h2></div>
+      <div class="drill-intro">Fun football activities to practice at home — designed for 4–5 year olds. Just 5–10 minutes a day makes a big difference! 🌟</div>
+      <div id="drills-list"></div>
+    </section>
+
+  </main>
+
+  <nav class="nav">
+    <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
+    <button class="nb"     data-p="ann"     onclick="tab('ann')"><span class="ni">📢</span>Updates</button>
+    <button class="nb"     data-p="session" onclick="tab('session')"><span class="ni">📅</span>Session</button>
+    <button class="nb"     data-p="plan"    onclick="tab('plan')"><span class="ni">📋</span>Plan</button>
+    <button class="nb"     data-p="squad"   onclick="tab('squad')"><span class="ni">👥</span>Squad</button>
+    <button class="nb"     data-p="drills"  onclick="tab('drills')"><span class="ni">🏡</span>Drills</button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const APP_VERSION = '4.0';
+const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697';
+const _PH = 'babf47003c5a3f4132f08da13ede81342fede3a4bccaab727bb1e6d3bd08774e';
+const _AK = 'jfc-auth-v1';
+const _TTL = 14*24*60*60*1000;
+const _FB = {
+  apiKey:"AIzaSyAMi0PVSoTru1idSj620eSor41PqMACMc8",
+  authDomain:"gajewski-finance.firebaseapp.com",
+  databaseURL:"https://gajewski-finance-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"gajewski-finance",
+  storageBucket:"gajewski-finance.firebasestorage.app",
+  messagingSenderId:"121083289554",
+  appId:"1:121083289554:web:d43ef9ed9ddf296407720b"
+};
+
+const PLAYERS = [
+  {id:'dylan_s',   name:'Dylan Steczkiewicz',    dob:'2021-11-19',parent:'Dominika Majdziak',  kit:true, group:'Reception'},
+  {id:'callum_g',  name:'Callum Greenwood',       dob:'2021-08-30',parent:'Amy Greenwood',      kit:false,group:'Reception'},
+  {id:'robert_g',  name:'Robert Gajewski',        dob:'2021-08-28',parent:'Sebastian Gajewski', kit:true, group:'Reception'},
+  {id:'james_w',   name:'James Wright',           dob:'2021-04-21',parent:'Craig Wright',       kit:true, group:'Reception'},
+  {id:'zachary_b', name:'Zachary Brannan',        dob:'2021-02-24',parent:'Lisa Brannan',       kit:false,group:'Reception'},
+  {id:'roman_g',   name:'Roman Grimes',           dob:'2020-08-21',parent:'James Grimes',       kit:true, group:'Year 1'},
+  {id:'hattie_r',  name:'Hattie Ratcliffe',       dob:'2020-03-24',parent:'Mark Ratcliffe',     kit:true, group:'Year 1'},
+  {id:'oliver_e',  name:'Oliver Edwards',         dob:'2020-03-09',parent:'Carolyn Berry',      kit:false,group:'Year 1'},
+  {id:'reuben_rh', name:'Reuben Rocliffe-Havern', dob:'2020-02-29',parent:'Craig Havern',       kit:true, group:'Year 1'},
+  {id:'noah_l',    name:'Noah Lowery',            dob:'2020-02-25',parent:'Rebekah Lowery',     kit:false,group:'Year 1'},
+];
+
+const DRILLS = [
+  {icon:'⭐',name:'Sticky Feet',diff:'easy',time:'5 min',kit:'Just a ball',steps:['Place the ball on the floor in front of you.','Put the sole of your foot on top of the ball.','Roll it slowly forward, then pull it back with your sole.','Try left foot, then right foot!'],why:'Builds first touch and gets little feet used to the feel of the ball.'},
+  {icon:'🔵',name:'Cone Weave',diff:'easy',time:'10 min',kit:'Ball + 5 objects',steps:['Line up 5 objects (bottles, socks, cones) about 1 m apart.','Dribble the ball left and right through them — one at a time.','Go slow first, then try faster each time.','Count how many laps you can do in 1 minute!'],why:'Develops close ball control and body coordination.'},
+  {icon:'🧱',name:'Wall Passer',diff:'medium',time:'10 min',kit:'Ball + a wall',steps:['Stand 2–3 metres from a flat wall.','Kick the ball gently against the wall.','Control it when it bounces back — stop it with your foot.','Try to kick and control without letting it roll away!'],why:'Improves passing accuracy and first touch under a realistic return.'},
+  {icon:'🥅',name:'Mini Shooter',diff:'easy',time:'10 min',kit:'Ball + 2 markers',steps:['Make a small goal using two jumpers, bottles or sticks — about 1.5 m wide.','Stand 3 metres back.','Take turns shooting and being goalkeeper.','Score 5 then swap!'],why:'Builds shooting confidence, goal sense and taking turns.'},
+  {icon:'🚦',name:'Stop & Go',diff:'easy',time:'5 min',kit:'Just a ball',steps:['Start dribbling freely around the garden or room.','Parent shouts "Stop!" — player must freeze the ball with their foot.','Parent shouts "Go!" — off they go again.','Try "Left!" and "Right!" to dribble in that direction.'],why:'Improves listening, ball control and quick reactions.'},
+  {icon:'8️⃣',name:'Figure of 8',diff:'easy',time:'5 min',kit:'Ball + 2 objects',steps:['Place two objects about 1.5 m apart.','Dribble the ball in a figure of 8 around both of them.','Try to keep the ball close — small touches!','Count 5 full 8s, then rest and repeat.'],why:'Teaches turning with the ball and changing direction — key skills in matches.'},
+  {icon:'⬆️',name:'Keepy-Uppies',diff:'medium',time:'5 min',kit:'Just a ball',steps:['Drop the ball onto your thigh and try to flick it back up.','Try with one foot — kick it up gently and catch it.','Count how many touches before it hits the ground.','Beat your own record each time!'],why:'Improves touch, timing and coordination — even 1 in a row is great at this age!'},
+  {icon:'🏃',name:'Kick & Chase',diff:'easy',time:'5 min',kit:'Just a ball',steps:['Give the ball a gentle kick forward — not too hard!','Sprint after it and stop it with the bottom of your foot before it goes too far.','Try to stop it in 3 touches.','Kick further each time for a bigger challenge.'],why:'Develops speed, chasing the ball and foot-stopping technique.'},
+  {icon:'🎯',name:'Target Shooting',diff:'medium',time:'10 min',kit:'Ball + targets',steps:['Stick 3–4 pieces of paper on a wall or fence as targets.','Stand 2 metres away and try to hit the targets with the ball.','Score 1 point per hit — which target is hardest to hit?','Move back a step each time you hit all targets!'],why:'Builds shooting accuracy and concentration — turns practice into a game.'},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let _role=null, _db=null, _att={}, _awards={}, _sessions={}, _sessFinalized=false;
+
+// ── SHA-256 ───────────────────────────────────────────────────────────────────
+async function sha256(s){
+  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(b)).map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function saveAuth(r){localStorage.setItem(_AK,JSON.stringify({r,e:Date.now()+_TTL}))}
+function loadAuth(){try{const d=JSON.parse(localStorage.getItem(_AK)||'{}');if(d.e>Date.now())return d.r}catch{}return null}
+
+async function tryUnlock(){
+  const pwd=document.getElementById('pwdIn').value;if(!pwd)return;
+  const h=await sha256(pwd);
+  if(h===_CH){saveAuth('coach');boot('coach')}
+  else if(h===_PH){saveAuth('parent');boot('parent')}
+  else{document.getElementById('lkErr').textContent='Incorrect password — try again.';document.getElementById('pwdIn').value=''}
+}
+document.getElementById('pwdIn').addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock()});
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+function boot(role){
+  _role=role;
+  document.getElementById('lock').classList.add('off');
+  document.getElementById('app').classList.remove('off');
+  const rt=document.getElementById('roleTag');
+  rt.textContent=role==='coach'?'⭐ Coach':'Parent';
+  rt.className='hdr-role '+role;
+
+  if(role==='parent'){
+    document.getElementById('att-section').style.display='none';
+    document.getElementById('ann-form-wrap').style.display='none';
+    document.getElementById('awards-edit').style.display='none';
+    document.getElementById('awards-view').style.display='block';
+    document.getElementById('plan-edit').style.display='none';
+    document.getElementById('plan-view').style.display='block';
+  }
+
+  if(!firebase.apps.length)firebase.initializeApp(_FB);
+  _db=firebase.database();
+
+  setDates();
+  populateAwardSelects();
+  renderAttGrid();
+  renderSquad();
+  renderDrills();
+  listenAnns();
+  listenSessions();
+  loadSession();
+  loadPlan();
+}
+
+// ── DATES ─────────────────────────────────────────────────────────────────────
+function nextSat(from=new Date()){
+  const d=new Date(from);const day=d.getDay();
+  d.setDate(d.getDate()+(day===6?7:6-day));return d;
+}
+function lastSat(from=new Date()){
+  const d=new Date(from);const day=d.getDay();
+  d.setDate(d.getDate()-(day===6?0:day+1));return d;
+}
+function iso(d){return d.toISOString().split('T')[0]}
+function disp(s){return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}
+function dispFull(s){return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+function dispShort(s){return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})}
+
+function setDates(){
+  const ns=nextSat(),ls=lastSat();
+  document.getElementById('nextDate').textContent=dispFull(iso(ns));
+  document.getElementById('sessDate').value=iso(ls);
+  document.getElementById('planDate').value=iso(ns);
+}
+
+// ── SESSION LISTENER (loads all sessions for history + player stats) ───────────
+function listenSessions(){
+  _db.ref('football/sessions').on('value',snap=>{
+    _sessions=snap.val()||{};
+    renderHistory();
+    renderHomeStats();
+  });
+}
+
+// ── HOME STATS ────────────────────────────────────────────────────────────────
+function renderHomeStats(){
+  const finalized=Object.keys(_sessions).filter(d=>_sessions[d]&&_sessions[d].finalized).sort();
+  document.getElementById('st-sessions').textContent=finalized.length||'0';
+  if(finalized.length){
+    const last=_sessions[finalized[finalized.length-1]];
+    const att=last.attendance||{};
+    document.getElementById('st-att').textContent=Object.values(att).filter(v=>v===true).length||'0';
+  }
+}
+
+// ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────────
+function listenAnns(){
+  _db.ref('football/announcements').orderByChild('ts').on('value',snap=>{
+    const items=[];snap.forEach(c=>items.unshift({id:c.key,...c.val()}));
+    renderAnns(items,'ann-list',true);
+    renderAnns(items.slice(0,3),'home-anns',false);
+  });
+}
+function renderAnns(items,id,full){
+  const el=document.getElementById(id);
+  if(!items.length){el.innerHTML='<div class="empty"><div class="empty-i">📢</div><p>No announcements yet</p></div>';return}
+  el.innerHTML=items.map(a=>`
+    <div class="ann">
+      ${full&&_role==='coach'?`<button class="ann-del" onclick="delAnn('${a.id}')">✕</button>`:''}
+      <div class="ann-badge">${x(a.title||'Update')}</div>
+      <div class="ann-text">${x(a.text).replace(/\n/g,'<br>')}</div>
+      <div class="ann-meta">${new Date(a.ts).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</div>
+    </div>`).join('');
+}
+function postAnn(){
+  const title=document.getElementById('annTitle').value.trim();
+  const text=document.getElementById('annText').value.trim();
+  if(!text)return toast('Please enter a message');
+  _db.ref('football/announcements').push({title:title||'Update',text,ts:Date.now()});
+  document.getElementById('annTitle').value='';document.getElementById('annText').value='';
+  toast('Announcement posted ✓');
+}
+function delAnn(id){if(!confirm('Delete this announcement?'))return;_db.ref('football/announcements/'+id).remove()}
+
+// ── LOAD SESSION ──────────────────────────────────────────────────────────────
+function loadSession(){
+  const date=document.getElementById('sessDate').value;
+  if(!date){toast('Pick a date first');return;}
+  _att={};_awards={};_sessFinalized=false;
+  document.getElementById('fin-badge').style.display='none';
+  renderAttGrid(); // button visibility handled inside renderAttGrid
+  if(!_db)return;
+  _db.ref('football/sessions/'+date).once('value',snap=>{
+    const d=snap.val()||{};
+    _att=d.attendance||{};
+    _awards=d.awards||{};
+    _sessFinalized=d.finalized===true;
+    renderAttGrid(); // updates button + attendance rows
+    if(_sessFinalized){
+      document.getElementById('fin-badge').style.display='flex';
+      const finAt=d.finalizedAt?new Date(d.finalizedAt).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}):'';
+      document.getElementById('fin-date').textContent=finAt?'Recorded on '+finAt:'Attendance locked';
+    }
+    if(_role==='coach'){
+      document.getElementById('awPotm').value=_awards.potm||'';
+      document.getElementById('awTs').value=_awards.ts||'';
+      document.getElementById('awBt').value=_awards.bt||'';
+    } else {
+      renderAwardCards();
+    }
+  },()=>toast('Could not load — check connection'));
+}
+
+// ── END SESSION ───────────────────────────────────────────────────────────────
+function endSession(){
+  const date=document.getElementById('sessDate').value;
+  if(!date)return toast('No session date selected');
+  const pres=Object.values(_att).filter(v=>v===true).length;
+  if(!confirm(`Record this session (${pres}/${PLAYERS.length} present)?\n\nAttendance will be locked and added to history.`))return;
+  _db.ref('football/sessions/'+date).update({finalized:true,finalizedAt:Date.now()},()=>{
+    _sessFinalized=true;
+    document.getElementById('fin-badge').style.display='flex';
+    document.getElementById('fin-date').textContent='Recorded now — attendance locked';
+    renderAttGrid(); // hides button + locks rows
+    toast('Session recorded ✓');
+  });
+}
+
+// ── ATTENDANCE ────────────────────────────────────────────────────────────────
+function renderAttGrid(){
+  const grps={Reception:[],['Year 1']:[]};PLAYERS.forEach(p=>grps[p.group].push(p));
+  let html='';
+  for(const[g,ps]of Object.entries(grps)){
+    html+=`<div class="grp-lbl">${g}</div>`;
+    ps.forEach(p=>{
+      const present=_att[p.id]===true;
+      const locked=_sessFinalized||_role!=='coach';
+      html+=`<div class="att-row${present?' p':''}${locked?' locked':''}" onclick="${locked?'':'toggleAtt(\''+p.id+'\')'}">
+        <div class="att-chk">${present?'✓':''}</div>
+        <div style="flex:1;min-width:0"><div class="att-nm">${x(p.name)}</div></div>
+        <div class="att-badge">${present?'Present':'—'}</div>
+      </div>`;
+    });
+  }
+  document.getElementById('att-body').innerHTML=html;
+  updAttSum();
+  // Single source of truth for button visibility — no need for show/hide anywhere else
+  const _esw=document.getElementById('end-sess-wrap');
+  if(_esw) _esw.style.display=(_role==='coach'&&!_sessFinalized)?'block':'none';
+}
+
+function toggleAtt(pid){
+  if(_role!=='coach'||_sessFinalized)return;
+  const date=document.getElementById('sessDate').value;if(!date)return;
+  if(_att[pid]===true){
+    delete _att[pid];
+    _db.ref('football/sessions/'+date+'/attendance/'+pid).remove();
+  } else {
+    _att[pid]=true;
+    _db.ref('football/sessions/'+date+'/attendance/'+pid).set(true);
+  }
+  renderAttGrid();
+}
+
+function updAttSum(){
+  const present=Object.values(_att).filter(v=>v===true).length;
+  document.getElementById('attSum').style.display='flex';
+  document.getElementById('attPres').textContent=present;
+  document.getElementById('attTotal').textContent='of '+PLAYERS.length;
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────────────────
+function renderHistory(){
+  const dates=Object.keys(_sessions).filter(d=>_sessions[d]&&_sessions[d].finalized===true).sort().reverse();
+  const el=document.getElementById('history-list');
+  if(!dates.length){el.innerHTML='<div class="empty"><div class="empty-i">📋</div><p>No sessions recorded yet</p></div>';return}
+  el.innerHTML=dates.map(date=>{
+    const s=_sessions[date];
+    const att=s.attendance||{};
+    const pres=Object.values(att).filter(v=>v===true).length;
+    const pct=Math.round(pres/PLAYERS.length*100);
+    return `<div class="hist-entry">
+      <div class="hist-hdr" onclick="toggleHist('${date}')">
+        <div class="hist-left">
+          <div class="hist-date">${dispFull(date)}</div>
+          <div class="hist-sub">${pres} of ${PLAYERS.length} players attended</div>
+        </div>
+        <div class="hist-right">
+          <span class="hist-pct">${pct}%</span>
+          <span class="hist-arr" id="ha-${date}">▼</span>
+        </div>
+      </div>
+      <div class="hist-body" id="hb-${date}" style="display:none">${buildHistBody(date,s)}</div>
+    </div>`;
+  }).join('');
+}
+
+function buildHistBody(date,s){
+  const att=s.attendance||{};
+  const grps={Reception:[],['Year 1']:[]};PLAYERS.forEach(p=>grps[p.group].push(p));
+  let html='';
+  for(const[g,ps]of Object.entries(grps)){
+    html+=`<div class="hist-grp">${g}</div>`;
+    ps.forEach(p=>{
+      const pres=att[p.id]===true;
+      html+=`<div class="hist-pl${pres?'':' absent'}">
+        <div class="hist-chk ${pres?'y':'n'}">${pres?'✓':'✗'}</div>
+        <div class="hist-pl-nm">${x(p.name)}</div>
+      </div>`;
+    });
+  }
+  const aw=s.awards||{};
+  const pName=id=>PLAYERS.find(p=>p.id===id)?.name.split(' ')[0]||'';
+  const chips=[[aw.potm,'⭐ PoM'],[aw.ts,'⚽ Top Scorer'],[aw.bt,'🤝 Teammate']].filter(([id])=>id).map(([id,lbl])=>`<span class="hist-aw-chip">${lbl}: ${x(pName(id))}</span>`).join('');
+  if(chips)html+=`<div class="hist-aw">${chips}</div>`;
+  return html;
+}
+
+function toggleHist(date){
+  const body=document.getElementById('hb-'+date);
+  const arr=document.getElementById('ha-'+date);
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  arr.style.transform=open?'':'rotate(180deg)';
+}
+
+// ── AWARDS ────────────────────────────────────────────────────────────────────
+function populateAwardSelects(){
+  ['awPotm','awTs','awBt'].forEach(id=>{
+    const sel=document.getElementById(id);
+    PLAYERS.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o)});
+  });
+}
+function saveAwards(){
+  const date=document.getElementById('sessDate').value;if(!date)return toast('Select a date first');
+  _awards={potm:document.getElementById('awPotm').value,ts:document.getElementById('awTs').value,bt:document.getElementById('awBt').value};
+  _db.ref('football/sessions/'+date+'/awards').set(_awards);
+  toast('Awards saved ✓');
+}
+function renderAwardCards(){
+  const cats=[{key:'potm',cls:'potm',ico:'⭐',label:'Player of the Match'},{key:'ts',cls:'ts',ico:'⚽',label:'Top Scorer'},{key:'bt',cls:'bt',ico:'🤝',label:'Best Teammate'}];
+  const none=cats.every(c=>!_awards[c.key]);
+  if(none){document.getElementById('awards-display').innerHTML='<div class="empty" style="padding:20px"><div class="empty-i">🏅</div><p>No awards set for this session</p></div>';return}
+  const pName=id=>PLAYERS.find(p=>p.id===id)?.name.split(' ')[0]||'—';
+  document.getElementById('awards-display').innerHTML=`<div class="award-grid">${cats.map(c=>`<div class="award-card ${c.cls}"><div class="aw-ico">${c.ico}</div><div class="aw-cat">${c.label}</div><div class="aw-name ${_awards[c.key]?'':'empty'}">${_awards[c.key]?x(pName(_awards[c.key])):'Not set'}</div></div>`).join('')}</div>`;
+}
+
+// ── SESSION PLAN ──────────────────────────────────────────────────────────────
+function loadPlan(){
+  const date=document.getElementById('planDate').value;if(!date)return;
+  _db.ref('football/sessions/'+date+'/plan').once('value',snap=>{
+    const pl=snap.val()||{};
+    if(_role==='coach'){
+      document.getElementById('plWarm').value=pl.warmup||'';
+      document.getElementById('plD1').value=pl.drill1||'';
+      document.getElementById('plD2').value=pl.drill2||'';
+      document.getElementById('plCool').value=pl.cool||'';
+      document.getElementById('plNotes').value=pl.notes||'';
+    } else {
+      const rows=[
+        {k:'warmup',l:'🏃 Warm-Up'},
+        {k:'drill1',l:'⚽ Part 1 — Drill'},
+        {k:'drill2',l:'🎯 Part 2 — Practice'},
+        {k:'cool',  l:'🏆 Part 3 — Match'}
+      ];
+      const has=rows.some(r=>pl[r.k]);
+      document.getElementById('plan-view').innerHTML=has
+        ?rows.filter(r=>pl[r.k]).map(r=>`<div class="pv"><div class="pv-l">${r.l}</div><div class="pv-t">${x(pl[r.k]).replace(/\n/g,'<br>')}</div></div>`).join('')
+        :'<div class="empty"><div class="empty-i">📋</div><p>No plan posted yet</p></div>';
+    }
+  });
+}
+function savePlan(){
+  const date=document.getElementById('planDate').value;if(!date)return toast('Select a date first');
+  _db.ref('football/sessions/'+date+'/plan').set({
+    warmup:document.getElementById('plWarm').value.trim(),
+    drill1:document.getElementById('plD1').value.trim(),
+    drill2:document.getElementById('plD2').value.trim(),
+    cool:document.getElementById('plCool').value.trim(),
+    notes:document.getElementById('plNotes').value.trim(),
+  });
+  toast('Plan saved ✓');
+}
+
+// ── SQUAD ─────────────────────────────────────────────────────────────────────
+function renderSquad(){
+  const grps={Reception:[],['Year 1']:[]};PLAYERS.forEach(p=>grps[p.group].push(p));
+  let html='';
+  for(const[g,ps]of Object.entries(grps)){
+    html+=`<div class="grp-lbl">${g}</div>`;
+    ps.forEach(p=>{
+      const ini=p.name.split(' ').slice(0,2).map(n=>n[0]).join('');
+      const sub=_role==='coach'?`👤 ${x(p.parent)}`:`Born: ${new Date(p.dob+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`;
+      const canExpand=_role==='coach';
+      html+=`<div class="sq-wrap" id="sw-${p.id}">
+        <div class="sq-c" onclick="${canExpand?`togglePlayer('${p.id}')`:''}">
+          <div class="sq-av">${ini}</div>
+          <div class="sq-info"><div class="sq-nm">${x(p.name)}</div><div class="sq-sb">${sub}</div></div>
+          <div class="sq-right">
+            <span class="${p.kit?'kit-y':'kit-n'}">${p.kit?'Kit ✓':'Kit ?'}</span>
+            ${canExpand?'<span class="sq-arr">▼</span>':''}
+          </div>
+        </div>
+        ${canExpand?`<div class="sq-detail" id="sd-${p.id}">
+          <div class="card-ttl" style="margin-bottom:8px">📊 Attendance</div>
+          <div id="pa-${p.id}"><div style="font-size:12px;color:var(--t3);padding:6px 0">Loading…</div></div>
+          <hr style="margin:14px 0">
+          <div class="card-ttl" style="margin-bottom:8px">📝 Progress Notes</div>
+          <div class="pg-add">
+            <textarea class="fta" id="pn-${p.id}" placeholder="Session note for ${x(p.name.split(' ')[0])}…"></textarea>
+            <div class="pg-add-row">
+              <input class="fi" type="date" id="pd-${p.id}">
+              <button class="btn sm" onclick="savePlayerProg('${p.id}')">Save</button>
+            </div>
+          </div>
+          <div id="ph-${p.id}"><div class="empty" style="padding:16px 0"><div class="empty-i" style="font-size:26px">📈</div><p>No notes yet</p></div></div>
+        </div>`:''}
+      </div>`;
+    });
+  }
+  document.getElementById('squad-list').innerHTML=html;
+  const today=iso(new Date());
+  PLAYERS.forEach(p=>{const el=document.getElementById('pd-'+p.id);if(el)el.value=today});
+}
+
+function togglePlayer(pid){
+  const card=document.getElementById('sw-'+pid).querySelector('.sq-c');
+  const detail=document.getElementById('sd-'+pid);
+  const isOpen=detail.classList.contains('open');
+  document.querySelectorAll('.sq-c').forEach(c=>c.classList.remove('open'));
+  document.querySelectorAll('.sq-detail').forEach(d=>d.classList.remove('open'));
+  if(!isOpen){
+    card.classList.add('open');detail.classList.add('open');
+    renderPlayerAttSummary(pid);
+    loadPlayerProg(pid);
+  }
+}
+
+// ── PLAYER ATTENDANCE SUMMARY ─────────────────────────────────────────────────
+function renderPlayerAttSummary(pid){
+  const el=document.getElementById('pa-'+pid);if(!el)return;
+  const allFinalized=Object.keys(_sessions).filter(d=>_sessions[d]&&_sessions[d].finalized===true).sort();
+  if(!allFinalized.length){el.innerHTML='<div style="font-size:12px;color:var(--t3);padding:6px 0">No sessions recorded yet</div>';return}
+  const attended=allFinalized.filter(d=>_sessions[d].attendance&&_sessions[d].attendance[pid]===true);
+  const pct=Math.round(attended.length/allFinalized.length*100);
+  const tier=pct>=80?'hi':pct>=50?'mid':'lo';
+  const dots=allFinalized.slice().reverse().slice(0,16).map(d=>{
+    const was=_sessions[d].attendance&&_sessions[d].attendance[pid]===true;
+    return `<div class="sess-dot ${was?'p':'a'}">${was?'✓':'✗'}<div class="sess-dot-d">${dispShort(d)}</div></div>`;
+  }).join('');
+  el.innerHTML=`
+    <div class="att-stat-card">
+      <div class="att-big-pct ${tier}">${pct}<span>%</span></div>
+      <div class="att-stat-right">
+        <div class="att-stat-lbl">${attended.length} of ${allFinalized.length} sessions attended</div>
+        <div class="att-pbar"><div class="att-pbar-fill ${tier}" style="width:${pct}%"></div></div>
+      </div>
+    </div>
+    <div class="sess-dots">${dots}</div>`;
+}
+
+// ── PLAYER PROGRESS NOTES ─────────────────────────────────────────────────────
+function loadPlayerProg(pid){
+  _db.ref('football/progress/'+pid).orderByChild('ts').once('value',snap=>{
+    const notes=[];snap.forEach(c=>notes.unshift({id:c.key,...c.val()}));
+    renderPlayerProg(pid,notes);
+  });
+}
+function renderPlayerProg(pid,notes){
+  const el=document.getElementById('ph-'+pid);if(!el)return;
+  if(!notes.length){el.innerHTML='<div class="empty" style="padding:16px 0"><div class="empty-i" style="font-size:26px">📈</div><p>No notes yet</p></div>';return}
+  el.innerHTML=notes.map(n=>`
+    <div class="pg-item">
+      <button class="pg-del" onclick="delPlayerProg('${pid}','${n.id}')">✕</button>
+      <div class="pg-date">${n.date?disp(n.date):new Date(n.ts).toLocaleDateString('en-GB')}</div>
+      <div class="pg-text">${x(n.text).replace(/\n/g,'<br>')}</div>
+    </div>`).join('');
+}
+function savePlayerProg(pid){
+  const text=document.getElementById('pn-'+pid).value.trim();
+  const date=document.getElementById('pd-'+pid).value;
+  if(!text)return toast('Enter a note first');
+  _db.ref('football/progress/'+pid).push({text,date,ts:Date.now()},()=>{
+    document.getElementById('pn-'+pid).value='';
+    loadPlayerProg(pid);toast('Note saved ✓');
+  });
+}
+function delPlayerProg(pid,nid){
+  if(!confirm('Delete this note?'))return;
+  _db.ref('football/progress/'+pid+'/'+nid).remove(()=>loadPlayerProg(pid));
+}
+
+// ── DRILLS ────────────────────────────────────────────────────────────────────
+function renderDrills(){
+  document.getElementById('drills-list').innerHTML=DRILLS.map(d=>`
+    <div class="drill-card">
+      <div class="drill-hdr">
+        <div class="drill-ico">${d.icon}</div>
+        <div>
+          <div class="drill-name">${d.name}</div>
+          <div class="drill-tags">
+            <span class="dtag ${d.diff}">${d.diff==='easy'?'Easy':'Medium'}</span>
+            <span class="dtag time">⏱ ${d.time}</span>
+            <span class="dtag kit">🎒 ${d.kit}</span>
+          </div>
+        </div>
+      </div>
+      <ol class="drill-steps">${d.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+      <div class="drill-why"><b>Why it helps:</b> ${d.why}</div>
+    </div>`).join('');
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function tab(name){
+  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('p-'+name).classList.add('on');
+  document.querySelector(`.nb[data-p="${name}"]`).classList.add('on');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function x(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+let _toastT;
+function toast(msg){
+  const el=document.getElementById('toast');clearTimeout(_toastT);
+  el.textContent=msg;el.classList.add('on');
+  _toastT=setTimeout(()=>el.classList.remove('on'),2600);
+}
+
+(function(){const r=loadAuth();if(r)boot(r)})();
+</script>
+</body>
+</html>
