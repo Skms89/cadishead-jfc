@@ -13,22 +13,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
-  <symbol id="logo" viewBox="0 0 320 72">
-    <!-- white background -->
-    <rect width="320" height="72" fill="#fff" rx="4"/>
-    <!-- left text block (fits in 0-118) -->
-    <text x="7" y="27" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="16" fill="#111" letter-spacing="0">CADISHEAD</text>
-    <text x="7" y="55" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="16" fill="#111" letter-spacing="0">SPORTS</text>
-    <!-- blue JFC block: x=118 to x=215, width=97 — JFC centered inside -->
-    <rect x="118" y="0" width="97" height="72" fill="#1565C0"/>
-    <text x="166" y="50" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="34" fill="#fff" text-anchor="middle">JFC</text>
-    <!-- dark crest block: x=215 to x=320 -->
-    <rect x="215" y="0" width="105" height="72" fill="#07101e"/>
-    <path d="M222,5 L308,5 L308,46 L265,66 L222,46 Z" fill="#0d1e44" stroke="#c9a030" stroke-width="2"/>
-    <path d="M228,10 L302,10 L302,44 L265,61 L228,44 Z" fill="none" stroke="#c9a030" stroke-width="0.8" opacity="0.5"/>
-    <path d="M247,17 L252,24 L258,17 L265,14 L272,17 L278,24 L283,17 L285,27 L245,27 Z" fill="#c9a030"/>
-    <rect x="222" y="36" width="86" height="7" fill="#c9a030" opacity="0.35"/>
-    <text x="265" y="57" font-family="Arial,sans-serif" font-weight="700" font-size="6" fill="#c9a030" text-anchor="middle" letter-spacing="0.8">CADISHEAD JFC</text>
+  <symbol id="logo" viewBox="0 0 300 68">
+    <rect width="300" height="68" fill="#fff" rx="4"/>
+    <!-- left text: both words forced to same block width so CADISHEAD condenses, SPORTS spaces out -->
+    <text x="6" y="28" font-family="'Arial Black','Arial Narrow',Arial,sans-serif" font-weight="900" font-size="13" fill="#111"
+          textLength="102" lengthAdjust="spacingAndGlyphs">CADISHEAD</text>
+    <text x="6" y="54" font-family="'Arial Black','Arial Narrow',Arial,sans-serif" font-weight="900" font-size="13" fill="#111"
+          textLength="102" lengthAdjust="spacingAndGlyphs">SPORTS</text>
+    <!-- blue JFC block -->
+    <rect x="114" y="0" width="90" height="68" fill="#1565C0"/>
+    <text x="159" y="48" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="32" fill="#fff" text-anchor="middle">JFC</text>
+    <!-- crest block -->
+    <rect x="204" y="0" width="96" height="68" fill="#0a1628"/>
+    <!-- shield outline -->
+    <path d="M218,6 L282,6 L282,42 L252,60 L222,42 Z" fill="#1a3a7a" stroke="#c9a030" stroke-width="1.5"/>
+    <!-- horizontal band across shield -->
+    <rect x="218" y="22" width="64" height="11" fill="#c9a030"/>
+    <!-- lion silhouettes top -->
+    <text x="235" y="21" font-family="serif" font-size="13" fill="#c9a030">♞</text>
+    <text x="252" y="21" font-family="serif" font-size="13" fill="#c9a030">♞</text>
+    <!-- bottom shield halves colour -->
+    <path d="M218,33 L252,33 L252,58 L222,42 Z" fill="#c62828"/>
+    <path d="M252,33 L282,33 L282,42 L252,58 Z" fill="#1a3a7a"/>
+    <!-- bottom label -->
+    <text x="252" y="64" font-family="Arial,sans-serif" font-weight="700" font-size="5" fill="#c9a030" text-anchor="middle" letter-spacing="0.5">CADISHEAD JFC</text>
   </symbol>
 </svg>
 
@@ -263,7 +271,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
 <!-- LOCK -->
 <div id="lock">
-  <div class="lk-logo"><svg width="260" height="58"><use href="#logo"/></svg></div>
+  <div class="lk-logo"><svg width="256" height="58"><use href="#logo"/></svg></div>
   <div class="lk-sub">Saturday 10:00 · Irlam &amp; Cadishead Academy</div>
   <div class="lk-form">
     <input id="pwdIn" class="lk-input" type="password" placeholder="Enter password" autocomplete="current-password">
@@ -275,7 +283,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <!-- APP -->
 <div id="app" class="off">
   <header class="hdr">
-    <div class="hdr-logo"><svg width="148" height="33"><use href="#logo"/></svg></div>
+    <div class="hdr-logo"><svg width="146" height="33"><use href="#logo"/></svg></div>
     <div class="hdr-role" id="roleTag"></div>
   </header>
 
@@ -283,7 +291,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
     <!-- HOME -->
     <section class="pnl on" id="p-home">
-      <div class="home-logo"><svg width="240" height="54"><use href="#logo"/></svg></div>
+      <div class="home-logo"><svg width="238" height="54"><use href="#logo"/></svg></div>
       <div class="next-card">
         <div class="nc-lbl">Next Session</div>
         <div class="nc-date" id="nextDate">—</div>
@@ -430,7 +438,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION = '4.2';
+const APP_VERSION = '4.3';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697';
 const _PH = 'babf47003c5a3f4132f08da13ede81342fede3a4bccaab727bb1e6d3bd08774e';
 const _AK = 'jfc-auth-v1';
