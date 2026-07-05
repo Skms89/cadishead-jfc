@@ -12,33 +12,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
-  <symbol id="logo" viewBox="0 0 300 68">
-    <rect width="300" height="68" fill="#fff" rx="4"/>
-    <!-- left text: both words forced to same block width so CADISHEAD condenses, SPORTS spaces out -->
-    <text x="6" y="28" font-family="'Arial Black','Arial Narrow',Arial,sans-serif" font-weight="900" font-size="13" fill="#111"
-          textLength="102" lengthAdjust="spacingAndGlyphs">CADISHEAD</text>
-    <text x="6" y="54" font-family="'Arial Black','Arial Narrow',Arial,sans-serif" font-weight="900" font-size="13" fill="#111"
-          textLength="102" lengthAdjust="spacingAndGlyphs">SPORTS</text>
-    <!-- blue JFC block -->
-    <rect x="114" y="0" width="90" height="68" fill="#1565C0"/>
-    <text x="159" y="48" font-family="'Arial Black',Arial,sans-serif" font-weight="900" font-size="32" fill="#fff" text-anchor="middle">JFC</text>
-    <!-- crest block -->
-    <rect x="204" y="0" width="96" height="68" fill="#0a1628"/>
-    <!-- shield outline -->
-    <path d="M218,6 L282,6 L282,42 L252,60 L222,42 Z" fill="#1a3a7a" stroke="#c9a030" stroke-width="1.5"/>
-    <!-- horizontal band across shield -->
-    <rect x="218" y="22" width="64" height="11" fill="#c9a030"/>
-    <!-- lion silhouettes top -->
-    <text x="235" y="21" font-family="serif" font-size="13" fill="#c9a030">♞</text>
-    <text x="252" y="21" font-family="serif" font-size="13" fill="#c9a030">♞</text>
-    <!-- bottom shield halves colour -->
-    <path d="M218,33 L252,33 L252,58 L222,42 Z" fill="#c62828"/>
-    <path d="M252,33 L282,33 L282,42 L252,58 Z" fill="#1a3a7a"/>
-    <!-- bottom label -->
-    <text x="252" y="64" font-family="Arial,sans-serif" font-weight="700" font-size="5" fill="#c9a030" text-anchor="middle" letter-spacing="0.5">CADISHEAD JFC</text>
-  </symbol>
-</svg>
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -112,7 +85,10 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
 /* HOME */
 .home-logo{display:flex;justify-content:center;margin-bottom:18px;padding-top:2px}
-.home-logo svg{border-radius:8px;box-shadow:0 6px 32px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.07)}
+.home-logo img{border-radius:8px;box-shadow:0 6px 32px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.07);display:block}
+.hdr-logo img{border-radius:4px;display:block}
+.lk-logo img{display:block;border-radius:8px}
+#ball-canvas{flex:1;min-width:0;height:33px;display:block;opacity:.85}
 .next-card{background:linear-gradient(135deg,#0b2054 0%,#0d47a1 70%,#1565C0 100%);border:none;border-radius:var(--r);padding:22px 20px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(13,71,161,.5),0 0 0 1px rgba(255,255,255,.06)}
 .next-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(255,255,255,.06) 0%,transparent 70%);pointer-events:none}
 .next-card::after{content:'⚽';position:absolute;right:16px;bottom:-2px;font-size:72px;opacity:.08;pointer-events:none}
@@ -271,7 +247,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
 <!-- LOCK -->
 <div id="lock">
-  <div class="lk-logo"><svg width="256" height="58"><use href="#logo"/></svg></div>
+  <div class="lk-logo"><img src="https://cadisheadsportsjfc.com/s/cdn/v1.0/i/m?url=https%3A%2F%2Fstorage.googleapis.com%2Fproduction-gator-v1-0-2%2F252%2F612252%2FdzLBzYiR%2Fbc461bc5d5154a1c922da7566bdac983&methods=resize%2C500%2C5000" height="72" alt="Cadishead Sports JFC" style="border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.7)"></div>
   <div class="lk-sub">Saturday 10:00 · Irlam &amp; Cadishead Academy</div>
   <div class="lk-form">
     <input id="pwdIn" class="lk-input" type="password" placeholder="Enter password" autocomplete="current-password">
@@ -283,7 +259,8 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <!-- APP -->
 <div id="app" class="off">
   <header class="hdr">
-    <div class="hdr-logo"><svg width="146" height="33"><use href="#logo"/></svg></div>
+    <div class="hdr-logo"><img src="https://cadisheadsportsjfc.com/s/cdn/v1.0/i/m?url=https%3A%2F%2Fstorage.googleapis.com%2Fproduction-gator-v1-0-2%2F252%2F612252%2FdzLBzYiR%2Fbc461bc5d5154a1c922da7566bdac983&methods=resize%2C500%2C5000" height="33" alt="Cadishead Sports JFC"></div>
+    <canvas id="ball-canvas"></canvas>
     <div class="hdr-role" id="roleTag"></div>
   </header>
 
@@ -291,7 +268,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
     <!-- HOME -->
     <section class="pnl on" id="p-home">
-      <div class="home-logo"><svg width="238" height="54"><use href="#logo"/></svg></div>
+      <div class="home-logo"><img src="https://cadisheadsportsjfc.com/s/cdn/v1.0/i/m?url=https%3A%2F%2Fstorage.googleapis.com%2Fproduction-gator-v1-0-2%2F252%2F612252%2FdzLBzYiR%2Fbc461bc5d5154a1c922da7566bdac983&methods=resize%2C500%2C5000" height="64" alt="Cadishead Sports JFC"></div>
       <div class="next-card">
         <div class="nc-lbl">Next Session</div>
         <div class="nc-date" id="nextDate">—</div>
@@ -438,7 +415,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION = '4.3';
+const APP_VERSION = '5.0';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697';
 const _PH = 'babf47003c5a3f4132f08da13ede81342fede3a4bccaab727bb1e6d3bd08774e';
 const _AK = 'jfc-auth-v1';
@@ -534,6 +511,7 @@ function boot(role){
   listenSessions();
   loadSession();
   loadPlan();
+  animateBall();
 }
 
 // ── DATES ─────────────────────────────────────────────────────────────────────
@@ -1014,6 +992,41 @@ function renderDrills(){
       <ol class="drill-steps">${d.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
       <div class="drill-why"><b>Why it helps:</b> ${d.why}</div>
     </div>`).join('');
+}
+
+// ── ANIMATED HEADER BALL ──────────────────────────────────────────────────────
+let _ballRunning=false;
+function animateBall(){
+  if(_ballRunning)return;
+  _ballRunning=true;
+  const c=document.getElementById('ball-canvas');
+  if(!c)return;
+  const ctx=c.getContext('2d');
+  let px=-28,frames=0;
+  function resize(){c.width=c.offsetWidth;c.height=c.offsetHeight||33;}
+  resize();
+  window.addEventListener('resize',resize);
+  function draw(){
+    frames++;
+    c.width=c.offsetWidth;c.height=c.offsetHeight||33;
+    ctx.clearRect(0,0,c.width,c.height);
+    const cy=c.height/2;
+    const py=cy+Math.sin(px*0.06)*9;
+    const rot=(px*0.04)%(Math.PI*2);
+    ctx.save();
+    ctx.translate(px+14,py);
+    ctx.rotate(rot);
+    ctx.font='22px serif';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText('⚽',0,0);
+    ctx.restore();
+    const speed=1.4+Math.sin(frames*0.02)*0.3;
+    px+=speed;
+    if(px>c.width+28)px=-28;
+    requestAnimationFrame(draw);
+  }
+  draw();
 }
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
