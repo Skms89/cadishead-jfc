@@ -562,7 +562,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
   </main>
 
-  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.9</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
+  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.10</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
 
   <nav class="nav">
     <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
@@ -583,7 +583,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 </div>
 
 <script>
-const APP_VERSION = '6.9';
+const APP_VERSION = '6.10';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697'; // admin bootstrap hash
 const _ADMIN_EMAIL = 's.w.gajewski@gmail.com';
 const _AK = 'jfc-auth-v3';
@@ -1437,22 +1437,21 @@ function sendChat(){
   const name=_user.nickname||_user.parentName||_user.email;
   const msg={text,sender:_user.uid||_user.email,senderName:name,
     childName:_user.childName||'',role:_user.role||'parent',ts:Date.now()};
-  // Generate real Firebase key synchronously before writing
-  const ref=_db.ref('football/chat').push();
-  const key=ref.key;
-  _pendingMsgs[key]={id:key,...msg};
-  input.value='';input.style.height='';
-  renderChat([..._chatMsgs,{id:key,...msg}]);
-  const chatEl=document.getElementById('chat-messages');if(chatEl)chatEl.scrollTop=chatEl.scrollHeight;
-  ref.set(msg,err=>{
+  // push(msg) writes atomically in one step — key is synchronously available from ref.key
+  const ref=_db.ref('football/chat').push(msg,err=>{
     if(err){
       delete _pendingMsgs[key];
       toast('Send failed — '+err.message);
       input.value=text;
       renderChat(_chatMsgs.filter(m=>m.id!==key));
     }
-    // On success: listener confirms the message and cleans up _pendingMsgs
+    // On success: listener confirms from server snapshot and cleans up _pendingMsgs
   });
+  const key=ref.key;
+  _pendingMsgs[key]={id:key,...msg};
+  input.value='';input.style.height='';
+  renderChat([..._chatMsgs,{id:key,...msg}]);
+  const chatEl=document.getElementById('chat-messages');if(chatEl)chatEl.scrollTop=chatEl.scrollHeight;
 }
 let _chatMsgs=[];
 function renderChat(msgs){
