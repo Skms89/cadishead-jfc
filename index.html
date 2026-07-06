@@ -562,7 +562,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
   </main>
 
-  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.10</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
+  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.11</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
 
   <nav class="nav">
     <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
@@ -583,7 +583,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 </div>
 
 <script>
-const APP_VERSION = '6.10';
+const APP_VERSION = '6.11';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697'; // admin bootstrap hash
 const _ADMIN_EMAIL = 's.w.gajewski@gmail.com';
 const _AK = 'jfc-auth-v3';
@@ -1407,20 +1407,29 @@ function closeTutorial(){
 }
 
 // ── CHAT ──────────────────────────────────────────────────────────────────────
-let _chatRef=null, _pendingMsgs={};
+// Uses .set(array) — same pattern as household-costs and shopping-list which
+// work reliably with this Firebase project. push() was silently failing to
+// reach the server (writes stayed in local cache only, cleared on refresh).
+let _chatRef=null;
+let _chatMsgs=[];
+
 function listenChat(){
   if(_chatRef)try{_chatRef.off('value');}catch(e){}
-  _chatRef=_db.ref('football/chat').limitToLast(120);
+  _chatRef=_db.ref('football/chat');
   _chatRef.on('value',
     snap=>{
-      const msgs=[];snap.forEach(c=>msgs.push({id:c.key,...c.val()}));
-      const sk=new Set(msgs.map(m=>m.id));
-      // Confirm pending messages the server now has; keep others visible
-      Object.keys(_pendingMsgs).forEach(k=>{
-        if(sk.has(k)){delete _pendingMsgs[k];}
-        else{msgs.push(_pendingMsgs[k]);}
-      });
-      renderChat(msgs);
+      const val=snap.val();
+      if(!val){
+        _chatMsgs=[];
+      } else if(Array.isArray(val)){
+        _chatMsgs=val.filter(m=>m&&m.text);
+      } else if(typeof val==='object'){
+        // Legacy push() format — convert to array; will be normalised on next send
+        _chatMsgs=Object.entries(val).map(([k,m])=>({id:k,...m})).sort((a,b)=>(a.ts||0)-(b.ts||0));
+      } else {
+        _chatMsgs=[];
+      }
+      renderChat(_chatMsgs);
     },
     err=>{
       const el=document.getElementById('chat-messages');
@@ -1430,30 +1439,26 @@ function listenChat(){
     }
   );
 }
+
 function sendChat(){
   const input=document.getElementById('chat-input');
   const text=input.value.trim();if(!text)return;
   if(!_db)return toast('Not connected — refresh the page');
   const name=_user.nickname||_user.parentName||_user.email;
-  const msg={text,sender:_user.uid||_user.email,senderName:name,
+  const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const msg={id,text,sender:_user.uid||_user.email,senderName:name,
     childName:_user.childName||'',role:_user.role||'parent',ts:Date.now()};
-  // push(msg) writes atomically in one step — key is synchronously available from ref.key
-  const ref=_db.ref('football/chat').push(msg,err=>{
-    if(err){
-      delete _pendingMsgs[key];
-      toast('Send failed — '+err.message);
-      input.value=text;
-      renderChat(_chatMsgs.filter(m=>m.id!==key));
-    }
-    // On success: listener confirms from server snapshot and cleans up _pendingMsgs
-  });
-  const key=ref.key;
-  _pendingMsgs[key]={id:key,...msg};
+  const newMsgs=[..._chatMsgs,msg];
+  if(newMsgs.length>200)newMsgs.splice(0,newMsgs.length-200);
   input.value='';input.style.height='';
-  renderChat([..._chatMsgs,{id:key,...msg}]);
+  _chatMsgs=newMsgs;
+  renderChat(_chatMsgs);
   const chatEl=document.getElementById('chat-messages');if(chatEl)chatEl.scrollTop=chatEl.scrollHeight;
+  _db.ref('football/chat').set(newMsgs,err=>{
+    if(err){toast('Send failed — '+err.message);input.value=text;}
+  });
 }
-let _chatMsgs=[];
+
 function renderChat(msgs){
   _chatMsgs=msgs;
   const el=document.getElementById('chat-messages');if(!el)return;
@@ -1472,15 +1477,17 @@ function renderChat(msgs){
       ?`${x(m.senderName)} ⭐ <span class="chat-child-tag">Coach</span>`
       :`${x(m.senderName)}${m.childName?` <span class="chat-child-tag">· ${x(m.childName)}</span>`:''}`;
     const editedTag=m.edited?`<span class="chat-edited">(edited)</span>`:'';
-    const editBtn=isMe?`<button class="chat-edit-btn" onclick="editMsg('${m.id}')">✏️</button>`:'';
-    return sep+`<div class="chat-msg ${isMe?'me':'them'}" id="chat-msg-${m.id}">
+    const safeId=m.id||'';
+    const editBtn=isMe&&safeId?`<button class="chat-edit-btn" onclick="editMsg('${safeId}')">✏️</button>`:'';
+    return sep+`<div class="chat-msg ${isMe?'me':'them'}" id="chat-msg-${safeId}">
       <div class="chat-sender">${senderLine}</div>
-      <div class="chat-bubble" id="msg-bubble-${m.id}">${x(m.text).replace(/\n/g,'<br>')}</div>
+      <div class="chat-bubble" id="msg-bubble-${safeId}">${x(m.text).replace(/\n/g,'<br>')}</div>
       <div class="chat-time">${time}${editedTag}${editBtn}</div>
     </div>`;
   }).join('');
   if(wasAtBottom||msgs.length<=5)el.scrollTop=el.scrollHeight;
 }
+
 function editMsg(msgId){
   const m=_chatMsgs.find(m=>m.id===msgId);if(!m)return;
   const bubble=document.getElementById('msg-bubble-'+msgId);if(!bubble)return;
@@ -1493,10 +1500,15 @@ function editMsg(msgId){
   const ta=document.getElementById('chat-et-'+msgId);
   if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}
 }
+
 function saveEdit(msgId){
   const ta=document.getElementById('chat-et-'+msgId);if(!ta)return;
   const text=ta.value.trim();if(!text)return;
-  _db.ref('football/chat/'+msgId).update({text,edited:true,editedAt:Date.now()});
+  const idx=_chatMsgs.findIndex(m=>m.id===msgId);if(idx<0)return;
+  const newMsgs=_chatMsgs.map((m,i)=>i===idx?{...m,text,edited:true,editedAt:Date.now()}:m);
+  _db.ref('football/chat').set(newMsgs,err=>{
+    if(err)toast('Edit failed — '+err.message);
+  });
 }
 
 // ── ADMIN PANEL ────────────────────────────────────────────────────────────────
