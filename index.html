@@ -539,6 +539,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
     <!-- CHAT -->
     <section class="pnl" id="p-chat" style="display:none;padding:0;height:100%;flex-direction:column">
+      <div id="chat-conn" style="display:none;font-size:11px;color:#FFA726;text-align:center;padding:8px 14px;background:rgba(255,152,0,.08);border-bottom:1px solid rgba(255,152,0,.2);flex-shrink:0;cursor:pointer">⚠️ Not connected — tap to reload</div>
       <div id="chat-messages" class="chat-msgs"></div>
       <div class="chat-bar">
         <textarea id="chat-input" class="chat-input" placeholder="Message the team…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
@@ -561,7 +562,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
   </main>
 
-  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.7</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
+  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.8</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
 
   <nav class="nav">
     <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
@@ -582,7 +583,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 </div>
 
 <script>
-const APP_VERSION = '6.7';
+const APP_VERSION = '6.8';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697'; // admin bootstrap hash
 const _ADMIN_EMAIL = 's.w.gajewski@gmail.com';
 const _AK = 'jfc-auth-v3';
@@ -745,6 +746,11 @@ function boot(user){
     listenSessions();
     listenSquad();
     listenChat();
+    _db.ref('.info/connected').on('value',snap=>{
+      const el=document.getElementById('chat-conn');if(!el)return;
+      if(snap.val()===false){el.style.display='block';el.onclick=()=>location.reload();}
+      else{el.style.display='none';el.onclick=null;}
+    });
     loadSession();
     loadPlan();
     if(user.role==='admin')loadAdminPanel();
@@ -1401,13 +1407,16 @@ function closeTutorial(){
 }
 
 // ── CHAT ──────────────────────────────────────────────────────────────────────
-let _chatRef=null;
+let _chatRef=null, _pendingMsgs={};
 function listenChat(){
   if(_chatRef)try{_chatRef.off('value');}catch(e){}
   _chatRef=_db.ref('football/chat').limitToLast(120);
   _chatRef.on('value',
     snap=>{
       const msgs=[];snap.forEach(c=>msgs.push({id:c.key,...c.val()}));
+      // Merge any pending sends that haven't appeared in the server snapshot yet
+      const sk=new Set(msgs.map(m=>m.id));
+      Object.values(_pendingMsgs).forEach(m=>{if(!sk.has(m.id))msgs.push(m);});
       renderChat(msgs);
     },
     err=>{
@@ -1423,22 +1432,22 @@ function sendChat(){
   const text=input.value.trim();if(!text)return;
   if(!_db)return toast('Not connected — refresh the page');
   const name=_user.nickname||_user.parentName||_user.email;
-  const ts=Date.now();
-  const tempId='_tmp'+ts;
   const msg={text,sender:_user.uid||_user.email,senderName:name,
-    childName:_user.childName||'',role:_user.role||'parent',ts};
+    childName:_user.childName||'',role:_user.role||'parent',ts:Date.now()};
+  // Generate real Firebase key synchronously before writing
+  const ref=_db.ref('football/chat').push();
+  const key=ref.key;
+  _pendingMsgs[key]={id:key,...msg};
   input.value='';input.style.height='';
-  // Show optimistically so message appears immediately
-  renderChat([..._chatMsgs,{id:tempId,...msg}]);
-  const chatEl=document.getElementById('chat-messages');
-  if(chatEl)chatEl.scrollTop=chatEl.scrollHeight;
-  _db.ref('football/chat').push(msg,err=>{
+  renderChat([..._chatMsgs,{id:key,...msg}]);
+  const chatEl=document.getElementById('chat-messages');if(chatEl)chatEl.scrollTop=chatEl.scrollHeight;
+  ref.set(msg,err=>{
+    delete _pendingMsgs[key];
     if(err){
       toast('Send failed — '+err.message);
       input.value=text;
-      renderChat(_chatMsgs); // rollback
+      renderChat(_chatMsgs.filter(m=>m.id!==key));
     }
-    // On success: listener fires and replaces the optimistic entry with the real key
   });
 }
 let _chatMsgs=[];
