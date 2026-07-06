@@ -303,6 +303,10 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 /* ADMIN PENDING BADGE */
 #nb-admin{position:relative}
 .nb-dot{position:absolute;top:7px;right:10px;width:8px;height:8px;background:#E53935;border-radius:50%;border:1.5px solid var(--bg);display:none}
+/* REGISTRATION ROLE TOGGLE */
+.reg-role-toggle{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.reg-role-btn{flex:1;background:transparent;border:none;color:var(--t2);padding:11px 8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s,color .2s;font-family:inherit}
+.reg-role-btn.active{background:var(--accent);color:#fff}
 /* TUTORIAL MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:800;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .modal-overlay.off{display:none}
@@ -338,14 +342,18 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
   <!-- REGISTRATION FORM -->
   <div id="lk-reg" style="display:none" class="lk-form">
     <div class="lk-section-ttl">Create Account</div>
+    <div class="reg-role-toggle">
+      <button type="button" class="reg-role-btn active" id="rrParent" onclick="setRegRole('parent')">👤 I'm a Parent</button>
+      <button type="button" class="reg-role-btn" id="rrCoach" onclick="setRegRole('coach')">⭐ I'm a Coach</button>
+    </div>
     <input id="regEmail" class="lk-input" type="email" placeholder="Email address *" autocomplete="email">
     <input id="regNick" class="lk-input" type="text" placeholder="Nickname (optional — e.g. Amy G)">
     <input id="regPwd" class="lk-input" type="password" placeholder="Password (min 6 chars) *">
     <input id="regPwd2" class="lk-input" type="password" placeholder="Confirm password *">
-    <div class="lk-divider">About your child</div>
+    <div class="lk-divider" id="reg-child-divider">About your child</div>
     <input id="regParent" class="lk-input" type="text" placeholder="Your first name only — e.g. Amy *">
     <input id="regChild" class="lk-input" type="text" placeholder="Child's first name + surname initial — e.g. Robert G *">
-    <label class="lk-check"><input type="checkbox" id="regKit"> Kit has been provided to my child</label>
+    <label class="lk-check" id="regKitLabel"><input type="checkbox" id="regKit"> Kit has been provided to my child</label>
     <button class="lk-btn" onclick="submitReg()">Register</button>
     <div class="lk-err" id="regErr"></div>
     <button class="lk-link" style="margin-top:10px" onclick="showLogin()">← Back to sign in</button>
@@ -553,7 +561,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
   </main>
 
-  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.3</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
+  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.4</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
 
   <nav class="nav">
     <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
@@ -570,22 +578,11 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <div id="toast"></div>
 
 <div class="modal-overlay off" id="tutorial-modal">
-  <div class="modal-box">
-    <div class="modal-ttl">👋 Welcome to the JFC App!</div>
-    <div class="modal-sub">Here's a quick guide to each section:</div>
-    <div class="tut-row"><div class="tut-ico">🏠</div><div class="tut-text"><strong>Home</strong>Next session date, team stats &amp; latest coach updates</div></div>
-    <div class="tut-row"><div class="tut-ico">📢</div><div class="tut-text"><strong>Updates</strong>All announcements from the coach</div></div>
-    <div class="tut-row"><div class="tut-ico">📅</div><div class="tut-text"><strong>Session</strong>Session history and awards — see who attended each week</div></div>
-    <div class="tut-row"><div class="tut-ico">📋</div><div class="tut-text"><strong>Plan</strong>The coach's plan for the upcoming session</div></div>
-    <div class="tut-row"><div class="tut-ico">👥</div><div class="tut-text"><strong>Squad</strong>Tap your child's name to see their attendance &amp; progress notes</div></div>
-    <div class="tut-row"><div class="tut-ico">🏡</div><div class="tut-text"><strong>Drills</strong>Fun football activities to practise at home with your child</div></div>
-    <div class="tut-row"><div class="tut-ico">💬</div><div class="tut-text"><strong>Chat</strong>Message the team and stay connected with other parents</div></div>
-    <button class="btn" style="width:100%;margin-top:18px;padding:14px;font-size:15px" onclick="closeTutorial()">Got it — let's go! ⚽</button>
-  </div>
+  <div class="modal-box" id="tutorial-box"></div>
 </div>
 
 <script>
-const APP_VERSION = '6.3';
+const APP_VERSION = '6.4';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697'; // admin bootstrap hash
 const _ADMIN_EMAIL = 's.w.gajewski@gmail.com';
 const _AK = 'jfc-auth-v3';
@@ -675,7 +672,21 @@ async function tryLogin(){
 document.getElementById('loginId').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
 document.getElementById('loginPwd').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
 
+function setRegRole(role){
+  document.getElementById('rrParent').classList.toggle('active',role==='parent');
+  document.getElementById('rrCoach').classList.toggle('active',role==='coach');
+  const divider=document.getElementById('reg-child-divider');
+  const childInput=document.getElementById('regChild');
+  if(role==='parent'){
+    divider.textContent='About your child';
+    childInput.placeholder="Child's first name + surname initial — e.g. Robert G *";
+  } else {
+    divider.textContent='About your child (optional — if you also have a child in the squad)';
+    childInput.placeholder="Child's first name + surname initial — e.g. Robert G (optional)";
+  }
+}
 async function submitReg(){
+  const requestedRole=document.getElementById('rrCoach').classList.contains('active')?'coach':'parent';
   const email=document.getElementById('regEmail').value.trim().toLowerCase();
   const nick=document.getElementById('regNick').value.trim();
   const pwd=document.getElementById('regPwd').value;
@@ -684,7 +695,8 @@ async function submitReg(){
   const childName=document.getElementById('regChild').value.trim();
   const kitReg=document.getElementById('regKit').checked;
   const errEl=document.getElementById('regErr');
-  if(!email||!pwd||!parentName||!childName){errEl.textContent='Please fill in all required fields';return;}
+  if(!email||!pwd||!parentName){errEl.textContent='Please fill in all required fields';return;}
+  if(requestedRole==='parent'&&!childName){errEl.textContent="Please enter your child's name";return;}
   if(!email.includes('@')){errEl.textContent='Please enter a valid email address';return;}
   if(pwd.length<6){errEl.textContent='Password must be at least 6 characters';return;}
   if(pwd!==pwd2){errEl.textContent='Passwords do not match';return;}
@@ -695,7 +707,7 @@ async function submitReg(){
   if(Object.values(accounts).some(a=>a.email&&a.email.toLowerCase()===email)){errEl.textContent='An account with this email already exists';return;}
   const h=await sha256(pwd);
   const uid=await sha256(email);
-  await _db.ref('football/accounts/'+uid).set({email,nickname:nick||parentName,pwHash:h,role:'parent',
+  await _db.ref('football/accounts/'+uid).set({email,nickname:nick||parentName,pwHash:h,role:requestedRole,
     approved:false,parentName,childName,childId:'',kitRegistered:kitReg,createdAt:Date.now()});
   showPending();
 }
@@ -724,7 +736,10 @@ function boot(user){
   renderAttGrid();
   renderDrills();
   animateNextCard();
-  if(_role==='parent'&&!localStorage.getItem(_TUT_KEY))setTimeout(showTutorial,800);
+  if(user.role!=='admin'){
+    const _tutKey=_role==='coach'?_TUT_COACH_KEY:_TUT_KEY;
+    if(!localStorage.getItem(_tutKey))setTimeout(showTutorial,800);
+  }
   if(_db){
     listenAnns();
     listenSessions();
@@ -1349,8 +1364,39 @@ function toast(msg){
 
 // ── TUTORIAL ──────────────────────────────────────────────────────────────────
 const _TUT_KEY='jfc-tut-v1';
-function showTutorial(){document.getElementById('tutorial-modal').classList.remove('off');}
-function closeTutorial(){document.getElementById('tutorial-modal').classList.add('off');localStorage.setItem(_TUT_KEY,'1');}
+const _TUT_COACH_KEY='jfc-tut-coach-v1';
+function _tutRow(ico,title,desc){return`<div class="tut-row"><div class="tut-ico">${ico}</div><div class="tut-text"><strong>${title}</strong>${desc}</div></div>`;}
+function _tutParentHTML(){return`
+  <div class="modal-ttl">👋 Welcome to the JFC App!</div>
+  <div class="modal-sub">Here's a quick guide to each section:</div>
+  ${_tutRow('🏠','Home','Next session date, team stats and latest coach updates')}
+  ${_tutRow('📢','Updates','All announcements from the coach')}
+  ${_tutRow('📅','Session','Session history and awards — see who attended each week')}
+  ${_tutRow('📋','Plan','The coach\'s plan for the upcoming session')}
+  ${_tutRow('👥','Squad','Tap your child\'s name to see their attendance and progress notes')}
+  ${_tutRow('🏡','Drills','Fun football activities to practise at home with your child')}
+  ${_tutRow('💬','Chat','Message the team and stay connected with other parents')}
+  <button class="btn" style="width:100%;margin-top:18px;padding:14px;font-size:15px" onclick="closeTutorial()">Got it — let's go! ⚽</button>`;}
+function _tutCoachHTML(){return`
+  <div class="modal-ttl">⭐ Welcome, Coach!</div>
+  <div class="modal-sub">Here's a full guide to everything you can manage in the app:</div>
+  ${_tutRow('🏠','Home','Overview card showing the next session, team attendance stats and a live countdown')}
+  ${_tutRow('📢','Updates','Post announcements for all parents — match day info, kit reminders, training changes, anything')}
+  ${_tutRow('📅','Session','Mark attendance for each player, assign session awards (POTM, Best Tackler, Top Scorer), then tap End Session to save the record')}
+  ${_tutRow('📋','Plan','Write the session plan — warm-up, two main activities, cool-down and notes. Parents can view but not edit')}
+  ${_tutRow('👥','Squad','View all players, add new ones, and tap any player to write or view their progress notes')}
+  ${_tutRow('🏡','Drills','Home practice activities visible to all parents — fixed list for now')}
+  ${_tutRow('💬','Chat','Real-time team chat — all parents and coaches can post here')}
+  ${_tutRow('⚙️','Admin','Approve or reject parent and coach registrations, revoke access, and link parent accounts to the correct squad player')}
+  <button class="btn" style="width:100%;margin-top:18px;padding:14px;font-size:15px" onclick="closeTutorial()">Let's coach! ⚽</button>`;}
+function showTutorial(){
+  document.getElementById('tutorial-box').innerHTML=_role==='coach'?_tutCoachHTML():_tutParentHTML();
+  document.getElementById('tutorial-modal').classList.remove('off');
+}
+function closeTutorial(){
+  document.getElementById('tutorial-modal').classList.add('off');
+  localStorage.setItem(_role==='coach'?_TUT_COACH_KEY:_TUT_KEY,'1');
+}
 
 // ── CHAT ──────────────────────────────────────────────────────────────────────
 function listenChat(){
@@ -1433,14 +1479,17 @@ function renderPending(list){
   if(dot)dot.style.display=list.length?'block':'none';
   const el=document.getElementById('admin-pending');
   if(!list.length){el.innerHTML='<div class="empty"><div class="empty-i">✅</div><p>No pending registrations</p></div>';return;}
-  el.innerHTML=list.map(a=>`<div class="adm-row">
-    <div class="adm-name">${x(a.parentName)} → ${x(a.childName)}</div>
-    <div class="adm-meta">📧 ${x(a.email)}<br>🎽 Kit registered: ${a.kitRegistered?'Yes':'No'}<br>📅 ${new Date(a.createdAt||Date.now()).toLocaleDateString('en-GB')}</div>
+  el.innerHTML=list.map(a=>{
+    const roleLabel=a.role==='coach'?'⭐ Coach request':'👤 Parent request';
+    const childLine=a.childName?`👦 Child: ${x(a.childName)}`:'No child registered';
+    return `<div class="adm-row">
+    <div class="adm-name">${x(a.parentName)} <span style="font-size:11px;color:var(--t2);font-weight:400">${roleLabel}</span></div>
+    <div class="adm-meta">📧 ${x(a.email)}<br>${childLine}<br>🎽 Kit: ${a.kitRegistered?'Yes':'No'} &nbsp;·&nbsp; 📅 ${new Date(a.createdAt||Date.now()).toLocaleDateString('en-GB')}</div>
     <div class="adm-acts">
       <button class="btn sm green" onclick="approveAccount('${a.uid}','${x(a.childName)}')">✅ Approve</button>
       <button class="btn sm ghost" onclick="rejectAccount('${a.uid}')">✕ Reject</button>
     </div>
-  </div>`).join('');
+  </div>`;}).join('');
 }
 function renderApproved(list){
   const el=document.getElementById('admin-accounts');
