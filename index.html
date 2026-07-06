@@ -10,6 +10,7 @@
 <title>Cadishead Sports JFC</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 
@@ -540,7 +541,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
   </main>
 
-  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.0</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
+  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.1</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
 
   <nav class="nav">
     <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
@@ -557,9 +558,15 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <div id="toast"></div>
 
 <script>
-const APP_VERSION = '6.0';
+const APP_VERSION = '6.1';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697'; // admin bootstrap hash
 const _ADMIN_EMAIL = 's.w.gajewski@gmail.com';
+// ── EmailJS — fill in after setting up at emailjs.com (free) ─────────────────
+const _EJ_KEY          = 'YOUR_PUBLIC_KEY';          // Account → API Keys → Public Key
+const _EJ_SVC          = 'YOUR_SERVICE_ID';          // Email Services → your Service ID
+const _EJ_TMPL_ADMIN   = 'YOUR_ADMIN_TEMPLATE_ID';   // template that notifies admin
+const _EJ_TMPL_WELCOME = 'YOUR_WELCOME_TEMPLATE_ID'; // template sent to new registrant
+// ─────────────────────────────────────────────────────────────────────────────
 const _AK = 'jfc-auth-v3';
 const _TTL = 14*24*60*60*1000;
 const _FB = {
@@ -669,7 +676,30 @@ async function submitReg(){
   const uid=await sha256(email);
   await _db.ref('football/accounts/'+uid).set({email,nickname:nick||parentName,pwHash:h,role:'parent',
     approved:false,parentName,childName,childId:'',kitRegistered:kitReg,createdAt:Date.now()});
+  sendAdminNotif(parentName,childName,email,kitReg);
+  sendWelcomeEmail(parentName,childName,email);
   showPending();
+}
+
+// ── EMAIL ─────────────────────────────────────────────────────────────────────
+function _ejOk(){return _EJ_KEY&&!_EJ_KEY.startsWith('YOUR_');}
+async function sendAdminNotif(parentName,childName,email,kit){
+  if(!_ejOk())return;
+  try{
+    await emailjs.send(_EJ_SVC,_EJ_TMPL_ADMIN,{
+      parent_name:parentName,child_name:childName,parent_email:email,
+      kit_status:kit?'Yes — kit provided':'No kit yet',
+      registered_at:new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})
+    });
+  }catch(e){console.warn('Admin notif email failed:',e);}
+}
+async function sendWelcomeEmail(parentName,childName,toEmail){
+  if(!_ejOk())return;
+  try{
+    await emailjs.send(_EJ_SVC,_EJ_TMPL_WELCOME,{
+      to_email:toEmail,parent_name:parentName,child_name:childName,admin_email:_ADMIN_EMAIL
+    });
+  }catch(e){console.warn('Welcome email failed:',e);}
 }
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
@@ -1416,7 +1446,7 @@ function renderApproved(list){
         <option value="">— Link to squad player —</option>
         ${_players.map(p=>`<option value="${p.id}" ${a.childId===p.id?'selected':''}>${x(p.name)}</option>`).join('')}
       </select>
-      <button class="btn sm ghost" onclick="removeAccount('${a.uid}')">✕</button>
+      <button class="btn sm ghost" onclick="removeAccount('${a.uid}')" style="color:#FF5252;border-color:rgba(229,57,53,.4)">Revoke</button>
     </div>
   </div>`).join('');
 }
@@ -1448,6 +1478,7 @@ function linkChild(uid,childId){
     if(!firebase.apps.length)firebase.initializeApp(_FB);
     _db=firebase.database();
   }catch(e){console.error('Firebase early init failed:',e);}
+  if(_ejOk()){try{emailjs.init({publicKey:_EJ_KEY});}catch(e){console.warn('EmailJS init failed:',e);}}
   const u=loadAuth();if(u)boot(u);
 })();
 </script>
