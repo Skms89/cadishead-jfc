@@ -303,6 +303,17 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 /* ADMIN PENDING BADGE */
 #nb-admin{position:relative}
 .nb-dot{position:absolute;top:7px;right:10px;width:8px;height:8px;background:#E53935;border-radius:50%;border:1.5px solid var(--bg);display:none}
+/* TUTORIAL MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:800;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.modal-overlay.off{display:none}
+.modal-box{background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:24px 20px;max-width:320px;width:100%;max-height:84vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.7)}
+.modal-ttl{font-size:18px;font-weight:800;margin-bottom:5px;letter-spacing:-.2px}
+.modal-sub{font-size:13px;color:var(--t2);margin-bottom:16px;line-height:1.5}
+.tut-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.tut-row:last-of-type{border-bottom:none;margin-bottom:4px}
+.tut-ico{font-size:20px;flex-shrink:0;line-height:1.4}
+.tut-text{font-size:13px;color:var(--t2);line-height:1.5}
+.tut-text strong{color:var(--text);font-weight:700;display:block;margin-bottom:1px}
 </style>
 </head>
 <body>
@@ -332,8 +343,8 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
     <input id="regPwd" class="lk-input" type="password" placeholder="Password (min 6 chars) *">
     <input id="regPwd2" class="lk-input" type="password" placeholder="Confirm password *">
     <div class="lk-divider">About your child</div>
-    <input id="regParent" class="lk-input" type="text" placeholder="Parent / guardian name *">
-    <input id="regChild" class="lk-input" type="text" placeholder="Child's full name *">
+    <input id="regParent" class="lk-input" type="text" placeholder="Your first name only — e.g. Amy *">
+    <input id="regChild" class="lk-input" type="text" placeholder="Child's first name + surname initial — e.g. Robert G *">
     <label class="lk-check"><input type="checkbox" id="regKit"> Kit has been provided to my child</label>
     <button class="lk-btn" onclick="submitReg()">Register</button>
     <div class="lk-err" id="regErr"></div>
@@ -414,8 +425,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
     <section class="pnl" id="p-session">
       <div class="sh"><h2>Session</h2></div>
       <div class="date-row">
-        <input class="fi" type="date" id="sessDate">
-        <button class="btn sm" onclick="loadSession()">Load</button>
+        <input class="fi" type="date" id="sessDate" onchange="loadSession()">
       </div>
 
       <!-- Finalized state badge + Reopen button -->
@@ -481,8 +491,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
     <section class="pnl" id="p-plan">
       <div class="sh"><h2>Session Plan</h2></div>
       <div class="date-row">
-        <input class="fi" type="date" id="planDate">
-        <button class="btn sm" onclick="loadPlan()">Load</button>
+        <input class="fi" type="date" id="planDate" onchange="if(_db)loadPlan()">
       </div>
       <div id="plan-edit" class="card">
         <div class="card-ttl">Edit Plan</div>
@@ -544,7 +553,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
   </main>
 
-  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.2</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
+  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.3</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
 
   <nav class="nav">
     <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
@@ -560,8 +569,23 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
 <div id="toast"></div>
 
+<div class="modal-overlay off" id="tutorial-modal">
+  <div class="modal-box">
+    <div class="modal-ttl">👋 Welcome to the JFC App!</div>
+    <div class="modal-sub">Here's a quick guide to each section:</div>
+    <div class="tut-row"><div class="tut-ico">🏠</div><div class="tut-text"><strong>Home</strong>Next session date, team stats &amp; latest coach updates</div></div>
+    <div class="tut-row"><div class="tut-ico">📢</div><div class="tut-text"><strong>Updates</strong>All announcements from the coach</div></div>
+    <div class="tut-row"><div class="tut-ico">📅</div><div class="tut-text"><strong>Session</strong>Session history and awards — see who attended each week</div></div>
+    <div class="tut-row"><div class="tut-ico">📋</div><div class="tut-text"><strong>Plan</strong>The coach's plan for the upcoming session</div></div>
+    <div class="tut-row"><div class="tut-ico">👥</div><div class="tut-text"><strong>Squad</strong>Tap your child's name to see their attendance &amp; progress notes</div></div>
+    <div class="tut-row"><div class="tut-ico">🏡</div><div class="tut-text"><strong>Drills</strong>Fun football activities to practise at home with your child</div></div>
+    <div class="tut-row"><div class="tut-ico">💬</div><div class="tut-text"><strong>Chat</strong>Message the team and stay connected with other parents</div></div>
+    <button class="btn" style="width:100%;margin-top:18px;padding:14px;font-size:15px" onclick="closeTutorial()">Got it — let's go! ⚽</button>
+  </div>
+</div>
+
 <script>
-const APP_VERSION = '6.2';
+const APP_VERSION = '6.3';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697'; // admin bootstrap hash
 const _ADMIN_EMAIL = 's.w.gajewski@gmail.com';
 const _AK = 'jfc-auth-v3';
@@ -700,6 +724,7 @@ function boot(user){
   renderAttGrid();
   renderDrills();
   animateNextCard();
+  if(_role==='parent'&&!localStorage.getItem(_TUT_KEY))setTimeout(showTutorial,800);
   if(_db){
     listenAnns();
     listenSessions();
@@ -1322,6 +1347,11 @@ function toast(msg){
   _toastT=setTimeout(()=>el.classList.remove('on'),2600);
 }
 
+// ── TUTORIAL ──────────────────────────────────────────────────────────────────
+const _TUT_KEY='jfc-tut-v1';
+function showTutorial(){document.getElementById('tutorial-modal').classList.remove('off');}
+function closeTutorial(){document.getElementById('tutorial-modal').classList.add('off');localStorage.setItem(_TUT_KEY,'1');}
+
 // ── CHAT ──────────────────────────────────────────────────────────────────────
 function listenChat(){
   _db.ref('football/chat').limitToLast(120).on('value',snap=>{
@@ -1332,12 +1362,13 @@ function listenChat(){
 function sendChat(){
   const input=document.getElementById('chat-input');
   const text=input.value.trim();if(!text)return;
+  if(!_db)return toast('Not connected — refresh the page');
   const name=_user.nickname||_user.parentName||_user.email;
+  input.value='';input.style.height='';
   _db.ref('football/chat').push({
     text,sender:_user.uid||_user.email,senderName:name,
     childName:_user.childName||'',role:_user.role,ts:Date.now()
-  });
-  input.value='';input.style.height='';
+  }).catch(err=>{toast('Message not sent ('+err.code+') — check connection');input.value=text;});
 }
 let _chatMsgs=[];
 function renderChat(msgs){
