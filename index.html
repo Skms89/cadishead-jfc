@@ -281,6 +281,22 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 .adm-meta{font-size:11px;color:var(--t2);margin-bottom:10px;line-height:1.5}
 .adm-acts{display:flex;gap:8px}
 
+/* HEADER USER + LOGOUT */
+.hdr-user{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.hdr-name{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap}
+.hdr-logout{background:none;border:1px solid var(--border);border-radius:8px;color:var(--t2);font-size:14px;padding:4px 8px;cursor:pointer;transition:color .15s,border-color .15s,background .15s;line-height:1}
+.hdr-logout:hover{color:var(--text);border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.06)}
+
+/* CHAT EDIT */
+.chat-edit-ta{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:12px;color:#fff;font-family:'Inter',sans-serif;font-size:14px;padding:8px 12px;outline:none;resize:none;min-height:48px;margin-bottom:6px}
+.chat-edit-row{display:flex;gap:6px}
+.chat-edited{font-size:10px;color:rgba(255,255,255,.45);font-style:italic;margin-left:4px}
+.chat-msg.them .chat-edited{color:var(--t3)}
+.chat-edit-btn{background:none;border:none;font-size:11px;color:rgba(255,255,255,.4);cursor:pointer;padding:0 2px;margin-left:4px;font-family:'Inter',sans-serif}
+.chat-edit-btn:hover{color:#fff}
+.chat-sender{font-size:11px;font-weight:700;color:var(--t2);margin-bottom:3px;padding:0 4px;line-height:1.3}
+.chat-child-tag{font-size:10px;font-weight:500;color:var(--t3)}
+
 /* CHAT PANEL LAYOUT FIX */
 #p-chat.on{display:flex!important;flex-direction:column;height:100%;padding:0}
 </style>
@@ -340,7 +356,11 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <div id="app" class="off">
   <header class="hdr">
     <div class="hdr-logo"><img src="https://cadisheadsportsjfc.com/s/cdn/v1.0/i/m?url=https%3A%2F%2Fstorage.googleapis.com%2Fproduction-gator-v1-0-2%2F252%2F612252%2FdzLBzYiR%2Fbc461bc5d5154a1c922da7566bdac983&methods=resize%2C500%2C5000" height="33" alt="Cadishead Sports JFC"></div>
-    <div class="hdr-role" id="roleTag"></div>
+    <div class="hdr-user">
+      <span class="hdr-name" id="hdrName"></span>
+      <div class="hdr-role" id="roleTag"></div>
+      <button class="hdr-logout" onclick="logout()" title="Sign out">⏻</button>
+    </div>
   </header>
 
   <main class="body">
@@ -591,6 +611,7 @@ async function sha256(s){
 function saveAuth(u){localStorage.setItem(_AK,JSON.stringify({u,e:Date.now()+_TTL}))}
 function loadAuth(){try{const d=JSON.parse(localStorage.getItem(_AK)||'{}');if(d.e>Date.now())return d.u}catch{}return null}
 function clearAuth(){localStorage.removeItem(_AK)}
+function logout(){if(!confirm('Sign out?'))return;clearAuth();location.reload();}
 
 function showLogin(){['lk-reg','lk-forgot','lk-pending'].forEach(id=>{document.getElementById(id).style.display='none'});document.getElementById('lk-login').style.display=''}
 function showReg(){document.getElementById('lk-login').style.display='none';document.getElementById('lk-reg').style.display=''}
@@ -658,8 +679,10 @@ function boot(user){
   document.getElementById('lock').classList.add('off');
   document.getElementById('app').classList.remove('off');
   const rt=document.getElementById('roleTag');
-  rt.textContent=_role==='coach'?'⭐ Coach':'👤 '+(user.nickname||user.parentName||'Parent');
+  rt.textContent=_role==='coach'?'⭐ Coach':'👤 Parent';
   rt.className='hdr-role '+_role;
+  const firstName=(user.nickname||user.parentName||user.email||'').split(' ')[0];
+  const hdrName=document.getElementById('hdrName');if(hdrName)hdrName.textContent=firstName;
   if(user.role==='admin')document.getElementById('nb-admin').style.display='flex';
   if(_role==='parent'){
     document.getElementById('att-section').style.display='none';
@@ -1306,12 +1329,18 @@ function sendChat(){
   const input=document.getElementById('chat-input');
   const text=input.value.trim();if(!text)return;
   const name=_user.nickname||_user.parentName||_user.email;
-  _db.ref('football/chat').push({text,sender:_user.uid||_user.email,senderName:name,role:_user.role,ts:Date.now()});
+  _db.ref('football/chat').push({
+    text,sender:_user.uid||_user.email,senderName:name,
+    childName:_user.childName||'',role:_user.role,ts:Date.now()
+  });
   input.value='';input.style.height='';
 }
+let _chatMsgs=[];
 function renderChat(msgs){
+  _chatMsgs=msgs;
   const el=document.getElementById('chat-messages');if(!el)return;
   const myId=_user.uid||_user.email;
+  const wasAtBottom=el.scrollHeight-el.scrollTop-el.clientHeight<60;
   let lastDate='';
   el.innerHTML=msgs.map(m=>{
     const isMe=m.sender===myId;
@@ -1321,13 +1350,35 @@ function renderChat(msgs){
     let sep='';
     if(dayStr!==lastDate){sep=`<div class="chat-date-sep">${dayStr}</div>`;lastDate=dayStr;}
     const isCoach=m.role==='coach'||m.role==='admin';
-    return sep+`<div class="chat-msg ${isMe?'me':'them'}">
-      ${!isMe?`<div class="chat-name">${x(m.senderName)}${isCoach?' ⭐':''}</div>`:''}
-      <div class="chat-bubble">${x(m.text).replace(/\n/g,'<br>')}</div>
-      <div class="chat-time">${time}</div>
+    const senderLine=isCoach
+      ?`${x(m.senderName)} ⭐ <span class="chat-child-tag">Coach</span>`
+      :`${x(m.senderName)}${m.childName?` <span class="chat-child-tag">· ${x(m.childName)}</span>`:''}`;
+    const editedTag=m.edited?`<span class="chat-edited">(edited)</span>`:'';
+    const editBtn=isMe?`<button class="chat-edit-btn" onclick="editMsg('${m.id}')">✏️</button>`:'';
+    return sep+`<div class="chat-msg ${isMe?'me':'them'}" id="chat-msg-${m.id}">
+      <div class="chat-sender">${senderLine}</div>
+      <div class="chat-bubble" id="msg-bubble-${m.id}">${x(m.text).replace(/\n/g,'<br>')}</div>
+      <div class="chat-time">${time}${editedTag}${editBtn}</div>
     </div>`;
   }).join('');
-  el.scrollTop=el.scrollHeight;
+  if(wasAtBottom||msgs.length<=5)el.scrollTop=el.scrollHeight;
+}
+function editMsg(msgId){
+  const m=_chatMsgs.find(m=>m.id===msgId);if(!m)return;
+  const bubble=document.getElementById('msg-bubble-'+msgId);if(!bubble)return;
+  const safe=m.text.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+  bubble.innerHTML=`<textarea class="chat-edit-ta" id="chat-et-${msgId}">${safe}</textarea>
+    <div class="chat-edit-row">
+      <button class="btn sm" onclick="saveEdit('${msgId}')">Save</button>
+      <button class="btn sm ghost" onclick="renderChat(_chatMsgs)">Cancel</button>
+    </div>`;
+  const ta=document.getElementById('chat-et-'+msgId);
+  if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}
+}
+function saveEdit(msgId){
+  const ta=document.getElementById('chat-et-'+msgId);if(!ta)return;
+  const text=ta.value.trim();if(!text)return;
+  _db.ref('football/chat/'+msgId).update({text,edited:true,editedAt:Date.now()});
 }
 
 // ── ADMIN PANEL ────────────────────────────────────────────────────────────────
