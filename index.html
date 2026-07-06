@@ -88,7 +88,6 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 .home-logo img{border-radius:8px;box-shadow:0 6px 32px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.07);display:block}
 .hdr-logo img{border-radius:4px;display:block}
 .lk-logo img{display:block;border-radius:8px}
-#ball-canvas{flex:1;min-width:0;height:33px;display:block;opacity:.85}
 .next-card{background:linear-gradient(135deg,#0b2054 0%,#0d47a1 70%,#1565C0 100%);border:none;border-radius:var(--r);padding:22px 20px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(13,71,161,.5),0 0 0 1px rgba(255,255,255,.06)}
 .next-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(255,255,255,.06) 0%,transparent 70%);pointer-events:none}
 .next-card::after{content:'⚽';position:absolute;right:16px;bottom:-2px;font-size:72px;opacity:.08;pointer-events:none}
@@ -245,6 +244,45 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+
+/* AUTH */
+.lk-links{display:flex;justify-content:space-between;gap:8px;margin-top:2px}
+.lk-link{background:none;border:none;color:var(--pri-lt);font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;padding:4px 0;text-decoration:underline;text-underline-offset:2px}
+.lk-link:hover{color:#fff}
+.lk-section-ttl{font-size:15px;font-weight:800;color:var(--text);text-align:center;margin-bottom:16px;letter-spacing:-.2px}
+.lk-divider{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);text-align:center;margin:8px 0 10px;border-top:1px solid var(--border);padding-top:12px}
+.lk-check{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--t2);padding:2px 0;margin-bottom:4px;cursor:pointer}
+.lk-check input{accent-color:var(--pri);width:16px;height:16px;cursor:pointer}
+
+/* CHAT */
+.chat-msgs{flex:1;overflow-y:auto;padding:14px 14px 6px;display:flex;flex-direction:column;gap:10px}
+.chat-msg{display:flex;flex-direction:column;max-width:80%}
+.chat-msg.me{align-self:flex-end;align-items:flex-end}
+.chat-msg.them{align-self:flex-start;align-items:flex-start}
+.chat-name{font-size:11px;font-weight:700;color:var(--t2);margin-bottom:3px;padding:0 4px}
+.chat-bubble{padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word}
+.chat-msg.me .chat-bubble{background:var(--pri);color:#fff;border-radius:18px 18px 4px 18px}
+.chat-msg.them .chat-bubble{background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:18px 18px 18px 4px}
+.chat-time{font-size:10px;color:var(--t3);margin-top:3px;padding:0 4px}
+.chat-bar{display:flex;align-items:flex-end;gap:8px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(6,16,29,.97);border-top:1px solid var(--border);flex-shrink:0}
+.chat-input{flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:22px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:10px 16px;outline:none;resize:none;max-height:120px;transition:border-color .2s}
+.chat-input:focus{border-color:var(--pri)}
+.chat-send{width:40px;height:40px;border-radius:50%;background:var(--pri);border:none;color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(21,101,192,.5)}
+.chat-date-sep{text-align:center;font-size:10px;color:var(--t3);padding:6px 0;letter-spacing:.4px}
+
+/* SQUAD MANAGEMENT */
+.sq-del{background:none;border:none;color:var(--t3);font-size:13px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color .15s,background .15s;margin-left:4px}
+.sq-del:hover{color:var(--red);background:rgba(229,57,53,.1)}
+.kit-toggle{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:background .15s,color .15s}
+
+/* ADMIN */
+.adm-row{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:13px 14px;margin-bottom:8px}
+.adm-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.adm-meta{font-size:11px;color:var(--t2);margin-bottom:10px;line-height:1.5}
+.adm-acts{display:flex;gap:8px}
+
+/* CHAT PANEL LAYOUT FIX */
+#p-chat.on{display:flex!important;flex-direction:column;height:100%;padding:0}
 </style>
 </head>
 <body>
@@ -252,11 +290,49 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <!-- LOCK -->
 <div id="lock">
   <div class="lk-logo"><img src="https://cadisheadsportsjfc.com/s/cdn/v1.0/i/m?url=https%3A%2F%2Fstorage.googleapis.com%2Fproduction-gator-v1-0-2%2F252%2F612252%2FdzLBzYiR%2Fbc461bc5d5154a1c922da7566bdac983&methods=resize%2C500%2C5000" height="72" alt="Cadishead Sports JFC" style="border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.7)"></div>
-  <div class="lk-sub">Saturday 10:00 · Irlam &amp; Cadishead Academy</div>
-  <div class="lk-form">
-    <input id="pwdIn" class="lk-input" type="password" placeholder="Enter password" autocomplete="current-password">
-    <button class="lk-btn" onclick="tryUnlock()">Unlock</button>
+  <div class="lk-sub">Cadishead Sports JFC · U5 Coaching App</div>
+
+  <!-- LOGIN FORM -->
+  <div id="lk-login" class="lk-form">
+    <input id="loginId" class="lk-input" type="email" placeholder="Email address" autocomplete="email">
+    <input id="loginPwd" class="lk-input" type="password" placeholder="Password" autocomplete="current-password">
+    <button class="lk-btn" onclick="tryLogin()">Sign In</button>
+    <div class="lk-links">
+      <button class="lk-link" onclick="showReg()">Create account</button>
+      <button class="lk-link" onclick="showForgot()">Forgot password?</button>
+    </div>
     <div class="lk-err" id="lkErr"></div>
+  </div>
+
+  <!-- REGISTRATION FORM -->
+  <div id="lk-reg" style="display:none" class="lk-form">
+    <div class="lk-section-ttl">Create Account</div>
+    <input id="regEmail" class="lk-input" type="email" placeholder="Email address *" autocomplete="email">
+    <input id="regNick" class="lk-input" type="text" placeholder="Nickname (optional — e.g. Amy G)">
+    <input id="regPwd" class="lk-input" type="password" placeholder="Password (min 6 chars) *">
+    <input id="regPwd2" class="lk-input" type="password" placeholder="Confirm password *">
+    <div class="lk-divider">About your child</div>
+    <input id="regParent" class="lk-input" type="text" placeholder="Parent / guardian name *">
+    <input id="regChild" class="lk-input" type="text" placeholder="Child's full name *">
+    <label class="lk-check"><input type="checkbox" id="regKit"> Kit has been provided to my child</label>
+    <button class="lk-btn" onclick="submitReg()">Register</button>
+    <div class="lk-err" id="regErr"></div>
+    <button class="lk-link" style="margin-top:10px" onclick="showLogin()">← Back to sign in</button>
+  </div>
+
+  <!-- FORGOT PASSWORD -->
+  <div id="lk-forgot" style="display:none" class="lk-form">
+    <div class="lk-section-ttl">Reset Password</div>
+    <p style="font-size:13px;color:var(--t2);text-align:center;margin-bottom:16px;line-height:1.6">Contact the coach to reset your password:<br><strong style="color:var(--text)">s.w.gajewski@gmail.com</strong></p>
+    <button class="lk-link" onclick="showLogin()">← Back to sign in</button>
+  </div>
+
+  <!-- PENDING APPROVAL -->
+  <div id="lk-pending" style="display:none" class="lk-form">
+    <div style="font-size:40px;text-align:center;margin-bottom:14px">⏳</div>
+    <div class="lk-section-ttl" style="text-align:center">Awaiting Approval</div>
+    <p style="font-size:13px;color:var(--t2);text-align:center;line-height:1.65;margin-bottom:18px">Your account has been registered and is waiting for the coach to approve it. You'll be able to sign in once approved.</p>
+    <button class="lk-link" onclick="showLogin()">← Back to sign in</button>
   </div>
 </div>
 
@@ -264,7 +340,6 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <div id="app" class="off">
   <header class="hdr">
     <div class="hdr-logo"><img src="https://cadisheadsportsjfc.com/s/cdn/v1.0/i/m?url=https%3A%2F%2Fstorage.googleapis.com%2Fproduction-gator-v1-0-2%2F252%2F612252%2FdzLBzYiR%2Fbc461bc5d5154a1c922da7566bdac983&methods=resize%2C500%2C5000" height="33" alt="Cadishead Sports JFC"></div>
-    <canvas id="ball-canvas"></canvas>
     <div class="hdr-role" id="roleTag"></div>
   </header>
 
@@ -286,7 +361,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
         </div>
       </div>
       <div class="stats">
-        <div class="stat"><div class="stat-n">10</div><div class="stat-l">Players</div></div>
+        <div class="stat"><div class="stat-n" id="st-players">—</div><div class="stat-l">Players</div></div>
         <div class="stat"><div class="stat-n" id="st-sessions">—</div><div class="stat-l">Sessions</div></div>
         <div class="stat"><div class="stat-n" id="st-att">—</div><div class="stat-l">Last Att.</div></div>
       </div>
@@ -399,7 +474,18 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
     <!-- SQUAD -->
     <section class="pnl" id="p-squad">
-      <div class="sh"><h2>Squad</h2></div>
+      <div class="sh"><h2>Squad</h2><button id="add-pl-btn" class="btn sm" onclick="toggleAddPlayer()" style="display:none">+ Add Player</button></div>
+      <div id="add-player-form" class="card" style="display:none;margin-bottom:14px">
+        <div class="card-ttl">New Player</div>
+        <input class="fi" id="new-pl-name" placeholder="Full name *">
+        <input class="fi" id="new-pl-parent" placeholder="Parent / guardian name *">
+        <select class="fsel" id="new-pl-group"><option value="Reception">Reception</option><option value="Year 1">Year 1</option></select>
+        <label class="lk-check" style="margin-bottom:12px"><input type="checkbox" id="new-pl-kit"> Kit provided</label>
+        <div style="display:flex;gap:8px">
+          <button class="btn sm green" onclick="addPlayer()">Save</button>
+          <button class="btn sm ghost" onclick="toggleAddPlayer()">Cancel</button>
+        </div>
+      </div>
       <div id="squad-list"></div>
     </section>
 
@@ -410,9 +496,31 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
       <div id="drills-list"></div>
     </section>
 
+    <!-- CHAT -->
+    <section class="pnl" id="p-chat" style="display:none;padding:0;height:100%;flex-direction:column">
+      <div id="chat-messages" class="chat-msgs"></div>
+      <div class="chat-bar">
+        <textarea id="chat-input" class="chat-input" placeholder="Message the team…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+        <button class="chat-send" onclick="sendChat()">➤</button>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section class="pnl" id="p-admin" style="display:none">
+      <div class="sh"><h2>Admin</h2></div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-ttl">⏳ Pending Approvals</div>
+        <div id="admin-pending"><div class="empty"><div class="empty-i">✅</div><p>No pending registrations</p></div></div>
+      </div>
+      <div class="card">
+        <div class="card-ttl">👥 All Accounts</div>
+        <div id="admin-accounts"></div>
+      </div>
+    </section>
+
   </main>
 
-  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">5.2</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
+  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.0</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
 
   <nav class="nav">
     <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
@@ -421,16 +529,18 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
     <button class="nb"     data-p="plan"    onclick="tab('plan')"><span class="ni">📋</span>Plan</button>
     <button class="nb"     data-p="squad"   onclick="tab('squad')"><span class="ni">👥</span>Squad</button>
     <button class="nb"     data-p="drills"  onclick="tab('drills')"><span class="ni">🏡</span>Drills</button>
+    <button class="nb"     data-p="chat"    onclick="tab('chat')" id="nb-chat"><span class="ni">💬</span>Chat</button>
+    <button class="nb"     data-p="admin"   onclick="tab('admin')" id="nb-admin" style="display:none"><span class="ni">⚙️</span>Admin</button>
   </nav>
 </div>
 
 <div id="toast"></div>
 
 <script>
-const APP_VERSION = '5.2';
-const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697';
-const _PH = 'babf47003c5a3f4132f08da13ede81342fede3a4bccaab727bb1e6d3bd08774e';
-const _AK = 'jfc-auth-v1';
+const APP_VERSION = '6.0';
+const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697'; // admin bootstrap hash
+const _ADMIN_EMAIL = 's.w.gajewski@gmail.com';
+const _AK = 'jfc-auth-v3';
 const _TTL = 14*24*60*60*1000;
 const _FB = {
   apiKey:"AIzaSyAMi0PVSoTru1idSj620eSor41PqMACMc8",
@@ -442,7 +552,7 @@ const _FB = {
   appId:"1:121083289554:web:d43ef9ed9ddf296407720b"
 };
 
-const PLAYERS = [
+const PLAYERS_DEFAULT = [
   {id:'dylan_s',   name:'Dylan Steczkiewicz',    dob:'2021-11-19',parent:'Dominika Majdziak',  kit:true, group:'Reception'},
   {id:'callum_g',  name:'Callum Greenwood',       dob:'2021-08-30',parent:'Amy Greenwood',      kit:false,group:'Reception'},
   {id:'robert_g',  name:'Robert Gajewski',        dob:'2021-08-28',parent:'Sebastian Gajewski', kit:true, group:'Reception'},
@@ -468,7 +578,8 @@ const DRILLS = [
 ];
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let _role=null, _db=null, _att={}, _awards={}, _sessions={}, _sessFinalized=false, _sessRef=null;
+let _role=null, _user=null, _db=null, _att={}, _awards={}, _sessions={}, _sessFinalized=false, _sessRef=null;
+let _players=[]; // loaded from Firebase, falls back to PLAYERS_DEFAULT
 
 // ── SHA-256 ───────────────────────────────────────────────────────────────────
 async function sha256(s){
@@ -477,58 +588,99 @@ async function sha256(s){
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
-function saveAuth(r){localStorage.setItem(_AK,JSON.stringify({r,e:Date.now()+_TTL}))}
-function loadAuth(){try{const d=JSON.parse(localStorage.getItem(_AK)||'{}');if(d.e>Date.now())return d.r}catch{}return null}
+function saveAuth(u){localStorage.setItem(_AK,JSON.stringify({u,e:Date.now()+_TTL}))}
+function loadAuth(){try{const d=JSON.parse(localStorage.getItem(_AK)||'{}');if(d.e>Date.now())return d.u}catch{}return null}
+function clearAuth(){localStorage.removeItem(_AK)}
 
-async function tryUnlock(){
-  const pwd=document.getElementById('pwdIn').value;if(!pwd)return;
+function showLogin(){['lk-reg','lk-forgot','lk-pending'].forEach(id=>{document.getElementById(id).style.display='none'});document.getElementById('lk-login').style.display=''}
+function showReg(){document.getElementById('lk-login').style.display='none';document.getElementById('lk-reg').style.display=''}
+function showForgot(){document.getElementById('lk-login').style.display='none';document.getElementById('lk-forgot').style.display=''}
+function showPending(){['lk-login','lk-reg'].forEach(id=>{document.getElementById(id).style.display='none'});document.getElementById('lk-pending').style.display=''}
+
+async function tryLogin(){
+  const id=document.getElementById('loginId').value.trim().toLowerCase();
+  const pwd=document.getElementById('loginPwd').value;
+  const errEl=document.getElementById('lkErr');
+  if(!id||!pwd){errEl.textContent='Please enter your email and password';return;}
+  errEl.textContent='Signing in…';
   const h=await sha256(pwd);
-  if(h===_CH){saveAuth('coach');boot('coach')}
-  else if(h===_PH){saveAuth('parent');boot('parent')}
-  else{document.getElementById('lkErr').textContent='Incorrect password — try again.';document.getElementById('pwdIn').value=''}
+  // Admin bootstrap — original coach password
+  if(id===_ADMIN_EMAIL&&h===_CH){
+    const u={email:_ADMIN_EMAIL,nickname:'Coach Seb',role:'admin',approved:true,childId:'',parentName:'Sebastian Gajewski'};
+    saveAuth(u);boot(u);return;
+  }
+  if(!_db){errEl.textContent='Database offline — check connection';return;}
+  const snap=await _db.ref('football/accounts').once('value');
+  const accounts=snap.val()||{};
+  let found=null,foundUid=null;
+  for(const[uid,acc]of Object.entries(accounts)){
+    if(acc.email&&acc.email.toLowerCase()===id){found=acc;foundUid=uid;break;}
+  }
+  if(!found){errEl.textContent='No account found with that email';return;}
+  if(found.pwHash!==h){errEl.textContent='Incorrect password';return;}
+  if(!found.approved){showPending();return;}
+  const u={uid:foundUid,email:found.email,nickname:found.nickname||found.parentName,role:found.role,
+           parentName:found.parentName,childId:found.childId||'',childName:found.childName};
+  saveAuth(u);boot(u);
 }
-document.getElementById('pwdIn').addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock()});
+document.getElementById('loginId').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+document.getElementById('loginPwd').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+
+async function submitReg(){
+  const email=document.getElementById('regEmail').value.trim().toLowerCase();
+  const nick=document.getElementById('regNick').value.trim();
+  const pwd=document.getElementById('regPwd').value;
+  const pwd2=document.getElementById('regPwd2').value;
+  const parentName=document.getElementById('regParent').value.trim();
+  const childName=document.getElementById('regChild').value.trim();
+  const kitReg=document.getElementById('regKit').checked;
+  const errEl=document.getElementById('regErr');
+  if(!email||!pwd||!parentName||!childName){errEl.textContent='Please fill in all required fields';return;}
+  if(!email.includes('@')){errEl.textContent='Please enter a valid email address';return;}
+  if(pwd.length<6){errEl.textContent='Password must be at least 6 characters';return;}
+  if(pwd!==pwd2){errEl.textContent='Passwords do not match';return;}
+  if(!_db){errEl.textContent='Database offline — check connection';return;}
+  errEl.textContent='Registering…';
+  const snap=await _db.ref('football/accounts').once('value');
+  const accounts=snap.val()||{};
+  if(Object.values(accounts).some(a=>a.email&&a.email.toLowerCase()===email)){errEl.textContent='An account with this email already exists';return;}
+  const h=await sha256(pwd);
+  const uid=await sha256(email);
+  await _db.ref('football/accounts/'+uid).set({email,nickname:nick||parentName,pwHash:h,role:'parent',
+    approved:false,parentName,childName,childId:'',kitRegistered:kitReg,createdAt:Date.now()});
+  showPending();
+}
 
 // ── BOOT ──────────────────────────────────────────────────────────────────────
-function boot(role){
-  _role=role;
+function boot(user){
+  _user=user;
+  _role=(user.role==='admin'||user.role==='coach')?'coach':'parent';
   document.getElementById('lock').classList.add('off');
   document.getElementById('app').classList.remove('off');
   const rt=document.getElementById('roleTag');
-  rt.textContent=role==='coach'?'⭐ Coach':'Parent';
-  rt.className='hdr-role '+role;
-
-  if(role==='parent'){
+  rt.textContent=_role==='coach'?'⭐ Coach':'👤 '+(user.nickname||user.parentName||'Parent');
+  rt.className='hdr-role '+_role;
+  if(user.role==='admin')document.getElementById('nb-admin').style.display='flex';
+  if(_role==='parent'){
     document.getElementById('att-section').style.display='none';
     document.getElementById('ann-form-wrap').style.display='none';
     document.getElementById('plan-edit').style.display='none';
     document.getElementById('plan-view').style.display='block';
   }
-
-  // Render everything that doesn't need Firebase first
+  if(_role==='coach')document.getElementById('add-pl-btn').style.display='';
   setDates();
   populateAwardSelects();
   renderAttGrid();
-  renderSquad();
   renderDrills();
-  animateBall();
   animateNextCard();
-
-  // Firebase — isolated so any failure here can't blank the UI
-  try {
-    if(!firebase.apps.length)firebase.initializeApp(_FB);
-    _db=firebase.database();
-    _db.ref('football/.test').set(1,e=>{
-      if(e){toast('⚠️ Firebase blocked: '+e.code);console.error('Firebase write denied:',e.message);}
-      else _db.ref('football/.test').remove();
-    });
+  if(_db){
     listenAnns();
     listenSessions();
+    listenSquad();
+    listenChat();
     loadSession();
     loadPlan();
-  } catch(e) {
-    console.error('Firebase init failed:',e);
-    toast('⚠️ Database offline — check your connection');
+    if(user.role==='admin')loadAdminPanel();
   }
 }
 
@@ -578,10 +730,10 @@ function renderHomeStats(){
   const s=_sessions[lastDate];
   const att=s.attendance||{};
   const aw=s.awards||{};
-  const present=PLAYERS.filter(p=>att[p.id]===true);
+  const present=_players.filter(p=>att[p.id]===true);
   document.getElementById('st-att').textContent=present.length;
-  const pName=id=>PLAYERS.find(p=>p.id===id)?.name.split(' ')[0]||'';
-  const pct=Math.round(present.length/PLAYERS.length*100);
+  const pName=id=>_players.find(p=>p.id===id)?.name.split(' ')[0]||'';
+  const pct=Math.round(present.length/_players.length*100);
   const awHtml=[[aw.potm,'⭐ PoM'],[aw.ts,'⚽ Top Scorer'],[aw.bt,'🤝 Teammate']]
     .filter(([id])=>id)
     .map(([id,lbl])=>`<span class="hist-aw-chip">${lbl}: ${x(pName(id))}</span>`)
@@ -596,7 +748,7 @@ function renderHomeStats(){
         <span class="hist-pct">${pct}%</span>
       </div>
       ${awHtml?`<div class="hist-aw" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">${awHtml}</div>`:''}
-      <div class="card-ttl" style="margin-bottom:8px">Attended (${present.length}/${PLAYERS.length})</div>
+      <div class="card-ttl" style="margin-bottom:8px">Attended (${present.length}/${_players.length})</div>
       <div style="display:flex;flex-wrap:wrap;gap:5px">${namesHtml}</div>
     </div>`;
   lsEl.style.display='block';
@@ -681,11 +833,11 @@ function endSession(){
   const date=document.getElementById('sessDate').value;
   if(!date)return toast('No date selected');
   if(!_db)return toast('Not connected — refresh the page');
-  const pres=PLAYERS.filter(p=>_att[p.id]===true).length;
-  if(!confirm(`Record session for ${dispFull(date)}?\n\n${pres} of ${PLAYERS.length} players present.\n\nThe session will be locked.`))return;
+  const pres=_players.filter(p=>_att[p.id]===true).length;
+  if(!confirm(`Record session for ${dispFull(date)}?\n\n${pres} of ${_players.length} players present.\n\nThe session will be locked.`))return;
   // Build full attendance snapshot — authoritative record
   const attSnap={};
-  PLAYERS.forEach(p=>{if(_att[p.id]===true)attSnap[p.id]=true;});
+  _players.forEach(p=>{if(_att[p.id]===true)attSnap[p.id]=true;});
   // Write everything in one atomic update
   _db.ref('football/sessions/'+date).update({
     finalized:true,
@@ -732,7 +884,7 @@ function renderAwardsSection(){
 
 // ── ATTENDANCE ────────────────────────────────────────────────────────────────
 function renderAttGrid(){
-  const grps={Reception:[],['Year 1']:[]};PLAYERS.forEach(p=>grps[p.group].push(p));
+  const grps={Reception:[],['Year 1']:[]};_players.forEach(p=>grps[p.group].push(p));
   let html='';
   for(const[g,ps]of Object.entries(grps)){
     html+=`<div class="grp-lbl">${g}</div>`;
@@ -769,7 +921,7 @@ function updAttSum(){
   const present=Object.values(_att).filter(v=>v===true).length;
   document.getElementById('attSum').style.display='flex';
   document.getElementById('attPres').textContent=present;
-  document.getElementById('attTotal').textContent='of '+PLAYERS.length;
+  document.getElementById('attTotal').textContent='of '+_players.length;
 }
 
 // ── HISTORY ───────────────────────────────────────────────────────────────────
@@ -781,12 +933,12 @@ function renderHistory(){
     const s=_sessions[date];
     const att=s.attendance||{};
     const pres=Object.values(att).filter(v=>v===true).length;
-    const pct=Math.round(pres/PLAYERS.length*100);
+    const pct=Math.round(pres/_players.length*100);
     return `<div class="hist-entry">
       <div class="hist-hdr" onclick="toggleHist('${date}')">
         <div class="hist-left">
           <div class="hist-date">${dispFull(date)}</div>
-          <div class="hist-sub">${pres} of ${PLAYERS.length} players attended</div>
+          <div class="hist-sub">${pres} of ${_players.length} players attended</div>
         </div>
         <div class="hist-right">
           <span class="hist-pct">${pct}%</span>
@@ -800,7 +952,7 @@ function renderHistory(){
 
 function buildHistBody(date,s){
   const att=s.attendance||{};
-  const grps={Reception:[],['Year 1']:[]};PLAYERS.forEach(p=>grps[p.group].push(p));
+  const grps={Reception:[],['Year 1']:[]};_players.forEach(p=>grps[p.group].push(p));
   let html='';
   for(const[g,ps]of Object.entries(grps)){
     html+=`<div class="hist-grp">${g}</div>`;
@@ -813,7 +965,7 @@ function buildHistBody(date,s){
     });
   }
   const aw=s.awards||{};
-  const pName=id=>PLAYERS.find(p=>p.id===id)?.name.split(' ')[0]||'';
+  const pName=id=>_players.find(p=>p.id===id)?.name.split(' ')[0]||'';
   const chips=[[aw.potm,'⭐ PoM'],[aw.ts,'⚽ Top Scorer'],[aw.bt,'🤝 Teammate']].filter(([id])=>id).map(([id,lbl])=>`<span class="hist-aw-chip">${lbl}: ${x(pName(id))}</span>`).join('');
   if(chips)html+=`<div class="hist-aw">${chips}</div>`;
   return html;
@@ -830,8 +982,11 @@ function toggleHist(date){
 // ── AWARDS ────────────────────────────────────────────────────────────────────
 function populateAwardSelects(){
   ['awPotm','awTs','awBt'].forEach(id=>{
-    const sel=document.getElementById(id);
-    PLAYERS.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o)});
+    const sel=document.getElementById(id);if(!sel)return;
+    const cur=sel.value;
+    while(sel.options.length>1)sel.remove(1);
+    _players.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o)});
+    sel.value=cur;
   });
 }
 function saveAwards(){
@@ -845,7 +1000,7 @@ function renderAwardCards(){
   const cats=[{key:'potm',cls:'potm',ico:'⭐',label:'Player of the Match'},{key:'ts',cls:'ts',ico:'⚽',label:'Top Scorer'},{key:'bt',cls:'bt',ico:'🤝',label:'Best Teammate'}];
   const none=cats.every(c=>!_awards[c.key]);
   if(none){document.getElementById('awards-display').innerHTML='<div class="empty" style="padding:20px"><div class="empty-i">🏅</div><p>No awards set for this session</p></div>';return}
-  const pName=id=>PLAYERS.find(p=>p.id===id)?.name.split(' ')[0]||'—';
+  const pName=id=>_players.find(p=>p.id===id)?.name.split(' ')[0]||'—';
   document.getElementById('awards-display').innerHTML=`<div class="award-grid">${cats.map(c=>`<div class="award-card ${c.cls}"><div class="aw-ico">${c.ico}</div><div class="aw-cat">${c.label}</div><div class="aw-name ${_awards[c.key]?'':'empty'}">${_awards[c.key]?x(pName(_awards[c.key])):'Not set'}</div></div>`).join('')}</div>`;
 }
 
@@ -886,57 +1041,120 @@ function savePlan(){
   toast('Plan saved ✓');
 }
 
+// ── SQUAD FIREBASE ─────────────────────────────────────────────────────────────
+function listenSquad(){
+  _db.ref('football/squad').on('value',snap=>{
+    const data=snap.val();
+    if(data){
+      _players=Object.entries(data).map(([id,p])=>({id,...p}));
+    } else {
+      _players=PLAYERS_DEFAULT.map(p=>({id:p.id,name:p.name,parentName:p.parent,dob:p.dob,group:p.group,kit:p.kit}));
+      const updates={};
+      PLAYERS_DEFAULT.forEach(p=>{updates[p.id]={name:p.name,parentName:p.parent,dob:p.dob,group:p.group,kit:p.kit};});
+      _db.ref('football/squad').set(updates);
+    }
+    const stEl=document.getElementById('st-players');if(stEl)stEl.textContent=_players.length;
+    renderSquad();
+    populateAwardSelects();
+  });
+}
+
+function toggleAddPlayer(){
+  const f=document.getElementById('add-player-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+}
+
+function addPlayer(){
+  const name=document.getElementById('new-pl-name').value.trim();
+  const parentName=document.getElementById('new-pl-parent').value.trim();
+  const group=document.getElementById('new-pl-group').value;
+  const kit=document.getElementById('new-pl-kit').checked;
+  if(!name||!parentName)return toast('Name and parent are required');
+  const id=name.toLowerCase().replace(/\s+/g,'_')+'_'+Date.now().toString(36);
+  _db.ref('football/squad/'+id).set({name,parentName,group,kit,dob:'',active:true});
+  document.getElementById('new-pl-name').value='';
+  document.getElementById('new-pl-parent').value='';
+  document.getElementById('new-pl-kit').checked=false;
+  toggleAddPlayer();
+  toast(name+' added to squad ✓');
+}
+
+function removePlayer(pid){
+  const p=_players.find(p=>p.id===pid);
+  if(!confirm('Remove '+(p?p.name:'this player')+' from the squad?\n\nThis cannot be undone.'))return;
+  _db.ref('football/squad/'+pid).remove();
+  toast('Player removed');
+}
+
+function toggleKit(pid){
+  const p=_players.find(p=>p.id===pid);if(!p)return;
+  _db.ref('football/squad/'+pid+'/kit').set(!p.kit);
+}
+
 // ── SQUAD ─────────────────────────────────────────────────────────────────────
 function renderSquad(){
-  const grps={Reception:[],['Year 1']:[]};PLAYERS.forEach(p=>grps[p.group].push(p));
+  if(!_players.length){document.getElementById('squad-list').innerHTML='<div class="empty"><div class="empty-i">👥</div><p>Loading squad…</p></div>';return;}
+  const grps={Reception:[],['Year 1']:[]};
+  _players.forEach(p=>{const g=p.group||'Reception';if(!grps[g])grps[g]=[];grps[g].push(p);});
   let html='';
   for(const[g,ps]of Object.entries(grps)){
+    if(!ps.length)continue;
     html+=`<div class="grp-lbl">${g}</div>`;
     ps.forEach(p=>{
       const ini=p.name.split(' ').slice(0,2).map(n=>n[0]).join('');
-      const sub=_role==='coach'?`👤 ${x(p.parent)}`:`Born: ${new Date(p.dob+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`;
-      const canExpand=_role==='coach';
+      const sub=_role==='coach'?`👤 ${x(p.parentName||p.parent||'')}`:`${x(p.parentName||p.parent||'')}`;
       html+=`<div class="sq-wrap" id="sw-${p.id}">
-        <div class="sq-c" onclick="${canExpand?`togglePlayer('${p.id}')`:''}">
+        <div class="sq-c" onclick="togglePlayer('${p.id}')">
           <div class="sq-av">${ini}</div>
           <div class="sq-info"><div class="sq-nm">${x(p.name)}</div><div class="sq-sb">${sub}</div></div>
           <div class="sq-right">
-            <span class="${p.kit?'kit-y':'kit-n'}">${p.kit?'Kit ✓':'Kit ?'}</span>
-            ${canExpand?'<span class="sq-arr">▼</span>':''}
+            <button class="kit-toggle ${p.kit?'kit-y':'kit-n'}" onclick="event.stopPropagation();${_role==='coach'?`toggleKit('${p.id}')`:'void(0)'}">${p.kit?'Kit ✓':'No Kit'}</button>
+            ${_role==='coach'?`<button class="sq-del" onclick="event.stopPropagation();removePlayer('${p.id}')">✕</button>`:''}
+            <span class="sq-arr">▼</span>
           </div>
         </div>
-        ${canExpand?`<div class="sq-detail" id="sd-${p.id}">
+        <div class="sq-detail" id="sd-${p.id}">
           <div class="card-ttl" style="margin-bottom:8px">📊 Attendance</div>
           <div id="pa-${p.id}"><div style="font-size:12px;color:var(--t3);padding:6px 0">Loading…</div></div>
           <hr style="margin:14px 0">
           <div class="card-ttl" style="margin-bottom:8px">📝 Progress Notes</div>
-          <div class="pg-add">
-            <textarea class="fta" id="pn-${p.id}" placeholder="Session note for ${x(p.name.split(' ')[0])}…"></textarea>
-            <div class="pg-add-row">
-              <input class="fi" type="date" id="pd-${p.id}">
-              <button class="btn sm" onclick="savePlayerProg('${p.id}')">Save</button>
+          <div id="pn-wrap-${p.id}">
+            <div class="pg-add">
+              <textarea class="fta" id="pn-${p.id}" placeholder="Session note for ${x(p.name.split(' ')[0])}…"></textarea>
+              <div class="pg-add-row">
+                <input class="fi" type="date" id="pd-${p.id}">
+                <button class="btn sm" onclick="savePlayerProg('${p.id}')">Save</button>
+              </div>
             </div>
           </div>
           <div id="ph-${p.id}"><div class="empty" style="padding:16px 0"><div class="empty-i" style="font-size:26px">📈</div><p>No notes yet</p></div></div>
-        </div>`:''}
+        </div>
       </div>`;
     });
   }
   document.getElementById('squad-list').innerHTML=html;
   const today=iso(new Date());
-  PLAYERS.forEach(p=>{const el=document.getElementById('pd-'+p.id);if(el)el.value=today});
+  _players.forEach(p=>{const el=document.getElementById('pd-'+p.id);if(el)el.value=today});
 }
 
 function togglePlayer(pid){
-  const card=document.getElementById('sw-'+pid).querySelector('.sq-c');
+  const wrap=document.getElementById('sw-'+pid);if(!wrap)return;
+  const card=wrap.querySelector('.sq-c');
   const detail=document.getElementById('sd-'+pid);
   const isOpen=detail.classList.contains('open');
   document.querySelectorAll('.sq-c').forEach(c=>c.classList.remove('open'));
   document.querySelectorAll('.sq-detail').forEach(d=>d.classList.remove('open'));
   if(!isOpen){
     card.classList.add('open');detail.classList.add('open');
-    renderPlayerAttSummary(pid);
-    loadPlayerProg(pid);
+    const canSeeDetails=_role==='coach'||(_user&&_user.childId===pid);
+    if(canSeeDetails){
+      renderPlayerAttSummary(pid);
+      if(_db)loadPlayerProg(pid);
+    } else {
+      document.getElementById('pa-'+pid).innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0;text-align:center">🔒 Attendance visible to this player\'s parent only</div>';
+      const pnw=document.getElementById('pn-wrap-'+pid);if(pnw)pnw.style.display='none';
+      document.getElementById('ph-'+pid).innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0;text-align:center">🔒 Notes visible to this player\'s parent only</div>';
+    }
   }
 }
 
@@ -1019,37 +1237,26 @@ function animateNextCard(){
   const c=document.getElementById('nc-canvas');
   if(!c)return;
   const ctx=c.getContext('2d');
-  const balls=[
-    {x:80,  y:0.38,sp:0.75,sz:16,ph:0.0},
-    {x:260, y:0.62,sp:1.05,sz:12,ph:1.8},
-    {x:440, y:0.45,sp:0.55,sz:20,ph:0.9},
-  ];
-  let f=0;
+  let bx=-40,f=0;
   function draw(){
     f++;
     const p=c.parentElement;
     const w=p.offsetWidth;const h=p.offsetHeight;
     c.width=w;c.height=h;
     ctx.clearRect(0,0,w,h);
-    // Pitch markings
+    // Pitch markings — centre line + circle only (no edge rects)
     ctx.strokeStyle='rgba(255,255,255,0.07)';ctx.lineWidth=1.5;
     ctx.beginPath();ctx.moveTo(w*.5,0);ctx.lineTo(w*.5,h);ctx.stroke();
-    ctx.beginPath();ctx.arc(w*.5,h*.5,Math.min(h*.45,48),0,Math.PI*2);ctx.stroke();
-    ctx.strokeRect(0,h*.18,w*.11,h*.64);
-    ctx.strokeRect(w*.89,h*.18,w*.11,h*.64);
-    ctx.strokeRect(0,h*.35,w*.04,h*.3);
-    ctx.strokeRect(w*.96,h*.35,w*.04,h*.3);
-    // Balls
-    balls.forEach(b=>{
-      const py=h*b.y+Math.sin(f*0.038+b.ph)*h*.14;
-      ctx.save();
-      ctx.translate(b.x,py);ctx.rotate(f*0.05*b.sp);
-      ctx.font=b.sz+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.globalAlpha=0.32;ctx.fillText('⚽',0,0);
-      ctx.restore();
-      b.x+=b.sp*1.3;
-      if(b.x>w+32)b.x=-32;
-    });
+    ctx.beginPath();ctx.arc(w*.5,h*.5,Math.min(h*.42,46),0,Math.PI*2);ctx.stroke();
+    // Single big ball bouncing across
+    const by=h*.5+Math.sin(f*0.04)*h*.22;
+    ctx.save();
+    ctx.translate(bx,by);ctx.rotate(f*0.06);
+    ctx.font='34px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.globalAlpha=0.38;ctx.fillText('⚽',0,0);
+    ctx.restore();
+    bx+=1.6;
+    if(bx>w+44)bx=-44;
     requestAnimationFrame(draw);
   }
   draw();
@@ -1067,47 +1274,16 @@ function updateCountdown(){
   else{el.textContent=days+' days to go';}
 }
 
-// ── ANIMATED HEADER BALL ──────────────────────────────────────────────────────
-let _ballRunning=false;
-function animateBall(){
-  if(_ballRunning)return;
-  _ballRunning=true;
-  const c=document.getElementById('ball-canvas');
-  if(!c)return;
-  const ctx=c.getContext('2d');
-  let px=-28,frames=0;
-  function resize(){c.width=c.offsetWidth;c.height=c.offsetHeight||33;}
-  resize();
-  window.addEventListener('resize',resize);
-  function draw(){
-    frames++;
-    c.width=c.offsetWidth;c.height=c.offsetHeight||33;
-    ctx.clearRect(0,0,c.width,c.height);
-    const cy=c.height/2;
-    const py=cy+Math.sin(px*0.06)*9;
-    const rot=(px*0.04)%(Math.PI*2);
-    ctx.save();
-    ctx.translate(px+14,py);
-    ctx.rotate(rot);
-    ctx.font='22px serif';
-    ctx.textAlign='center';
-    ctx.textBaseline='middle';
-    ctx.fillText('⚽',0,0);
-    ctx.restore();
-    const speed=1.4+Math.sin(frames*0.02)*0.3;
-    px+=speed;
-    if(px>c.width+28)px=-28;
-    requestAnimationFrame(draw);
-  }
-  draw();
-}
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
 function tab(name){
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  document.getElementById('p-'+name).classList.add('on');
-  document.querySelector(`.nb[data-p="${name}"]`).classList.add('on');
+  const pnl=document.getElementById('p-'+name);
+  if(pnl)pnl.classList.add('on');
+  const nb=document.querySelector(`.nb[data-p="${name}"]`);
+  if(nb)nb.classList.add('on');
+  if(name==='chat'){const el=document.getElementById('chat-messages');if(el)el.scrollTop=el.scrollHeight;}
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
@@ -1119,7 +1295,110 @@ function toast(msg){
   _toastT=setTimeout(()=>el.classList.remove('on'),2600);
 }
 
-(function(){const r=loadAuth();if(r)boot(r)})();
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+function listenChat(){
+  _db.ref('football/chat').limitToLast(120).on('value',snap=>{
+    const msgs=[];snap.forEach(c=>msgs.push({id:c.key,...c.val()}));
+    renderChat(msgs);
+  });
+}
+function sendChat(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();if(!text)return;
+  const name=_user.nickname||_user.parentName||_user.email;
+  _db.ref('football/chat').push({text,sender:_user.uid||_user.email,senderName:name,role:_user.role,ts:Date.now()});
+  input.value='';input.style.height='';
+}
+function renderChat(msgs){
+  const el=document.getElementById('chat-messages');if(!el)return;
+  const myId=_user.uid||_user.email;
+  let lastDate='';
+  el.innerHTML=msgs.map(m=>{
+    const isMe=m.sender===myId;
+    const d=new Date(m.ts);
+    const dayStr=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+    const time=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    let sep='';
+    if(dayStr!==lastDate){sep=`<div class="chat-date-sep">${dayStr}</div>`;lastDate=dayStr;}
+    const isCoach=m.role==='coach'||m.role==='admin';
+    return sep+`<div class="chat-msg ${isMe?'me':'them'}">
+      ${!isMe?`<div class="chat-name">${x(m.senderName)}${isCoach?' ⭐':''}</div>`:''}
+      <div class="chat-bubble">${x(m.text).replace(/\n/g,'<br>')}</div>
+      <div class="chat-time">${time}</div>
+    </div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+// ── ADMIN PANEL ────────────────────────────────────────────────────────────────
+function loadAdminPanel(){
+  _db.ref('football/accounts').on('value',snap=>{
+    const accounts=snap.val()||{};
+    const pending=[];const approved=[];
+    for(const[uid,a]of Object.entries(accounts)){
+      if(a.email===_ADMIN_EMAIL)continue;
+      (a.approved?approved:pending).push({uid,...a});
+    }
+    renderPending(pending);renderApproved(approved);
+  });
+}
+function renderPending(list){
+  const el=document.getElementById('admin-pending');
+  if(!list.length){el.innerHTML='<div class="empty"><div class="empty-i">✅</div><p>No pending registrations</p></div>';return;}
+  el.innerHTML=list.map(a=>`<div class="adm-row">
+    <div class="adm-name">${x(a.parentName)} → ${x(a.childName)}</div>
+    <div class="adm-meta">📧 ${x(a.email)}<br>🎽 Kit registered: ${a.kitRegistered?'Yes':'No'}<br>📅 ${new Date(a.createdAt||Date.now()).toLocaleDateString('en-GB')}</div>
+    <div class="adm-acts">
+      <button class="btn sm green" onclick="approveAccount('${a.uid}','${x(a.childName)}')">✅ Approve</button>
+      <button class="btn sm ghost" onclick="rejectAccount('${a.uid}')">✕ Reject</button>
+    </div>
+  </div>`).join('');
+}
+function renderApproved(list){
+  const el=document.getElementById('admin-accounts');
+  if(!list.length){el.innerHTML='<div style="font-size:13px;color:var(--t3);padding:8px 0">No approved accounts yet</div>';return;}
+  el.innerHTML=list.map(a=>`<div class="adm-row">
+    <div class="adm-name">${x(a.parentName)} (${x(a.nickname||a.email)})</div>
+    <div class="adm-meta">👤 Child: ${x(a.childName)} · Role: ${a.role}<br>📧 ${x(a.email)}</div>
+    <div class="adm-acts">
+      <select onchange="linkChild('${a.uid}',this.value)" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 10px;font-size:12px">
+        <option value="">— Link to squad player —</option>
+        ${_players.map(p=>`<option value="${p.id}" ${a.childId===p.id?'selected':''}>${x(p.name)}</option>`).join('')}
+      </select>
+      <button class="btn sm ghost" onclick="removeAccount('${a.uid}')">✕</button>
+    </div>
+  </div>`).join('');
+}
+function approveAccount(uid,childName){
+  // Try to auto-match child name to squad player
+  let childId='';
+  const first=(childName||'').toLowerCase().split(' ')[0];
+  const match=_players.find(p=>p.name.toLowerCase().includes(first));
+  if(match)childId=match.id;
+  _db.ref('football/accounts/'+uid).update({approved:true,childId});
+  toast('Account approved ✓');
+}
+function rejectAccount(uid){
+  if(!confirm('Delete this registration?'))return;
+  _db.ref('football/accounts/'+uid).remove();toast('Registration removed');
+}
+function removeAccount(uid){
+  if(!confirm('Remove this account? The user will need to re-register.'))return;
+  _db.ref('football/accounts/'+uid).remove();toast('Account removed');
+}
+function linkChild(uid,childId){
+  _db.ref('football/accounts/'+uid+'/childId').set(childId);
+  toast('Child linked ✓');
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
+(function(){
+  try{
+    if(!firebase.apps.length)firebase.initializeApp(_FB);
+    _db=firebase.database();
+  }catch(e){console.error('Firebase early init failed:',e);}
+  const u=loadAuth();if(u)boot(u);
+})();
 </script>
 </body>
 </html>
