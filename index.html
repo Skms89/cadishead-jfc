@@ -520,7 +520,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
         <div class="card-ttl">New Player</div>
         <input class="fi" id="new-pl-name" placeholder="Full name *">
         <input class="fi" id="new-pl-parent" placeholder="Parent / guardian name *">
-        <select class="fsel" id="new-pl-group"><option value="Reception">Reception</option><option value="Year 1">Year 1</option></select>
+        <select class="fsel" id="new-pl-group"><option value="Nursery">Nursery</option><option value="Reception">Reception</option><option value="Year 1">Year 1</option></select>
         <label class="lk-check" style="margin-bottom:12px"><input type="checkbox" id="new-pl-kit"> Kit provided</label>
         <div style="display:flex;gap:8px">
           <button class="btn sm green" onclick="addPlayer()">Save</button>
@@ -562,7 +562,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
   </main>
 
-  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.11</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
+  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.12</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
 
   <nav class="nav">
     <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
@@ -583,7 +583,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 </div>
 
 <script>
-const APP_VERSION = '6.11';
+const APP_VERSION = '6.12';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697'; // admin bootstrap hash
 const _ADMIN_EMAIL = 's.w.gajewski@gmail.com';
 const _AK = 'jfc-auth-v3';
@@ -957,7 +957,7 @@ function renderAwardsSection(){
 
 // ── ATTENDANCE ────────────────────────────────────────────────────────────────
 function renderAttGrid(){
-  const grps={Reception:[],['Year 1']:[]};_players.forEach(p=>grps[p.group].push(p));
+  const grps={Nursery:[],Reception:[],['Year 1']:[]};_players.forEach(p=>{const g=p.group||'Reception';if(!grps[g])grps[g]=[];grps[g].push(p);});
   let html='';
   for(const[g,ps]of Object.entries(grps)){
     html+=`<div class="grp-lbl">${g}</div>`;
@@ -1025,7 +1025,7 @@ function renderHistory(){
 
 function buildHistBody(date,s){
   const att=s.attendance||{};
-  const grps={Reception:[],['Year 1']:[]};_players.forEach(p=>grps[p.group].push(p));
+  const grps={Nursery:[],Reception:[],['Year 1']:[]};_players.forEach(p=>{const g=p.group||'Reception';if(!grps[g])grps[g]=[];grps[g].push(p);});
   let html='';
   for(const[g,ps]of Object.entries(grps)){
     html+=`<div class="hist-grp">${g}</div>`;
@@ -1164,10 +1164,28 @@ function toggleKit(pid){
   _db.ref('football/squad/'+pid+'/kit').set(!p.kit);
 }
 
+function toggleEditPlayer(pid){
+  const form=document.getElementById('se-'+pid);if(!form)return;
+  form.style.display=form.style.display==='none'?'block':'none';
+}
+
+function savePlayerEdit(pid){
+  const name=document.getElementById('se-name-'+pid).value.trim();
+  const parentName=document.getElementById('se-parent-'+pid).value.trim();
+  const dob=document.getElementById('se-dob-'+pid).value;
+  const group=document.getElementById('se-group-'+pid).value;
+  const kit=document.getElementById('se-kit-'+pid).checked;
+  if(!name||!parentName)return toast('Name and parent are required');
+  _db.ref('football/squad/'+pid).update({name,parentName,dob,group,kit},err=>{
+    if(err)return toast('Save failed — '+err.message);
+    toast(name+' updated ✓');
+  });
+}
+
 // ── SQUAD ─────────────────────────────────────────────────────────────────────
 function renderSquad(){
   if(!_players.length){document.getElementById('squad-list').innerHTML='<div class="empty"><div class="empty-i">👥</div><p>Loading squad…</p></div>';return;}
-  const grps={Reception:[],['Year 1']:[]};
+  const grps={Nursery:[],Reception:[],['Year 1']:[]};
   _players.forEach(p=>{const g=p.group||'Reception';if(!grps[g])grps[g]=[];grps[g].push(p);});
   let html='';
   for(const[g,ps]of Object.entries(grps)){
@@ -1187,6 +1205,26 @@ function renderSquad(){
           </div>
         </div>
         <div class="sq-detail" id="sd-${p.id}">
+          ${_role==='coach'?`<div id="se-${p.id}" style="display:none;margin-bottom:16px">
+            <div class="card-ttl" style="margin-bottom:10px">✏️ Edit Player</div>
+            <input class="fi" id="se-name-${p.id}" value="${x(p.name)}" placeholder="Full name *">
+            <input class="fi" id="se-parent-${p.id}" value="${x(p.parentName||p.parent||'')}" placeholder="Parent / guardian name *">
+            <input class="fi" type="date" id="se-dob-${p.id}" value="${p.dob||''}">
+            <select class="fsel" id="se-group-${p.id}">
+              <option value="Nursery"${(p.group||'Reception')==='Nursery'?' selected':''}>Nursery</option>
+              <option value="Reception"${(p.group||'Reception')==='Reception'?' selected':''}>Reception</option>
+              <option value="Year 1"${(p.group||'Reception')==='Year 1'?' selected':''}>Year 1</option>
+            </select>
+            <label class="lk-check" style="margin-bottom:10px"><input type="checkbox" id="se-kit-${p.id}"${p.kit?' checked':''}> Kit provided</label>
+            <div style="display:flex;gap:8px">
+              <button class="btn sm green" onclick="savePlayerEdit('${p.id}')">Save</button>
+              <button class="btn sm ghost" onclick="toggleEditPlayer('${p.id}')">Cancel</button>
+            </div>
+            <hr style="margin:14px 0">
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <button class="btn sm ghost" onclick="toggleEditPlayer('${p.id}')" style="font-size:11px;padding:6px 12px">✏️ Edit player</button>
+          </div>`:''}
           <div class="card-ttl" style="margin-bottom:8px">📊 Attendance</div>
           <div id="pa-${p.id}"><div style="font-size:12px;color:var(--t3);padding:6px 0">Loading…</div></div>
           <hr style="margin:14px 0">
