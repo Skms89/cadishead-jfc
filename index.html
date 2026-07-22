@@ -579,7 +579,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
   </main>
 
-  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.14</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
+  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.15</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
 
   <nav class="nav">
     <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
@@ -600,7 +600,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 </div>
 
 <script>
-const APP_VERSION = '6.14';
+const APP_VERSION = '6.15';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697'; // admin bootstrap hash
 const _ADMIN_EMAIL = 's.w.gajewski@gmail.com';
 const _AK = 'jfc-auth-v3';
@@ -1203,13 +1203,8 @@ function savePlayerEdit(pid){
 // ── SQUAD ─────────────────────────────────────────────────────────────────────
 function renderSquad(){
   if(!_players.length){document.getElementById('squad-list').innerHTML='<div class="empty"><div class="empty-i">👥</div><p>Loading squad…</p></div>';return;}
-  const visiblePlayers=_role==='coach'?_players:_players.filter(p=>_user&&p.id===_user.childId);
-  if(_role==='parent'&&!visiblePlayers.length){
-    document.getElementById('squad-list').innerHTML='<div class="empty"><div class="empty-i">👤</div><p>Your child\'s profile will appear here once the coach has linked your account.</p></div>';
-    return;
-  }
   const grps={Nursery:[],Reception:[],['Year 1']:[]};
-  visiblePlayers.forEach(p=>{const g=p.group||'Reception';if(!grps[g])grps[g]=[];grps[g].push(p);});
+  _players.forEach(p=>{const g=p.group||'Reception';if(!grps[g])grps[g]=[];grps[g].push(p);});
   let html='';
   for(const[g,ps]of Object.entries(grps)){
     if(!ps.length)continue;
@@ -1276,7 +1271,7 @@ function renderSquad(){
   }
   document.getElementById('squad-list').innerHTML=html;
   const today=iso(new Date());
-  visiblePlayers.forEach(p=>{const el=document.getElementById('pd-'+p.id);if(el)el.value=today});
+  _players.forEach(p=>{const el=document.getElementById('pd-'+p.id);if(el)el.value=today});
 }
 
 function togglePlayer(pid){
@@ -1337,8 +1332,11 @@ function setProgRating(pid,rating){
 }
 
 function loadPlayerProg(pid){
-  _db.ref('football/progress/'+pid).orderByChild('ts').once('value',snap=>{
-    const notes=[];snap.forEach(c=>notes.unshift({id:c.key,...c.val()}));
+  _db.ref('football/progress/'+pid).once('value',snap=>{
+    const raw=snap.val();let notes=[];
+    if(Array.isArray(raw))notes=raw.filter(Boolean);
+    else if(raw&&typeof raw==='object')notes=Object.entries(raw).map(([k,v])=>({id:k,...v}));
+    notes.sort((a,b)=>(b.ts||0)-(a.ts||0));
     renderPlayerProg(pid,notes);
   });
 }
@@ -1373,18 +1371,30 @@ function savePlayerProg(pid){
   const goals=parseInt(document.getElementById('pg-'+pid).value)||0;
   const date=document.getElementById('pd-'+pid).value;
   if(!rating)return toast('Please select a session rating first');
-  _db.ref('football/progress/'+pid).push({rating,goals,date,ts:Date.now()},()=>{
-    document.getElementById('pr-'+pid).value='';
-    document.getElementById('pg-'+pid).value='0';
-    document.querySelectorAll('#prog-btns-'+pid+' .prog-btn').forEach(b=>b.className='prog-btn');
-    loadPlayerProg(pid);
-    toast('Session recorded ✓');
+  const nid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  _db.ref('football/progress/'+pid).once('value',snap=>{
+    const raw=snap.val();let existing=[];
+    if(Array.isArray(raw))existing=raw.filter(Boolean);
+    else if(raw&&typeof raw==='object')existing=Object.entries(raw).map(([k,v])=>({id:k,...v}));
+    _db.ref('football/progress/'+pid).set([...existing,{id:nid,rating,goals,date,ts:Date.now()}],err=>{
+      if(err)return toast('Save failed — '+err.message);
+      document.getElementById('pr-'+pid).value='';
+      document.getElementById('pg-'+pid).value='0';
+      document.querySelectorAll('#prog-btns-'+pid+' .prog-btn').forEach(b=>b.className='prog-btn');
+      loadPlayerProg(pid);
+      toast('Session recorded ✓');
+    });
   });
 }
 
 function delPlayerProg(pid,nid){
   if(!confirm('Delete this record?'))return;
-  _db.ref('football/progress/'+pid+'/'+nid).remove(()=>loadPlayerProg(pid));
+  _db.ref('football/progress/'+pid).once('value',snap=>{
+    const raw=snap.val();let notes=[];
+    if(Array.isArray(raw))notes=raw.filter(Boolean);
+    else if(raw&&typeof raw==='object')notes=Object.entries(raw).map(([k,v])=>({id:k,...v}));
+    _db.ref('football/progress/'+pid).set(notes.filter(n=>n.id!==nid),()=>loadPlayerProg(pid));
+  });
 }
 
 function editPlayerProg(pid,nid){
@@ -1421,10 +1431,18 @@ function saveProgEdit(pid,nid){
   const rating=document.getElementById('edit-r-'+nid).value;
   const goals=parseInt(document.getElementById('edit-g-'+nid).value)||0;
   if(!rating)return toast('Please select a rating first');
-  _db.ref('football/progress/'+pid+'/'+nid).update({rating,goals},err=>{
-    if(err)return toast('Save failed — '+err.message);
-    loadPlayerProg(pid);
-    toast('Updated ✓');
+  _db.ref('football/progress/'+pid).once('value',snap=>{
+    const raw=snap.val();let notes=[];
+    if(Array.isArray(raw))notes=raw.filter(Boolean);
+    else if(raw&&typeof raw==='object')notes=Object.entries(raw).map(([k,v])=>({id:k,...v}));
+    const idx=notes.findIndex(n=>n.id===nid);
+    if(idx<0)return toast('Record not found — please refresh');
+    notes[idx]={...notes[idx],rating,goals};
+    _db.ref('football/progress/'+pid).set(notes,err=>{
+      if(err)return toast('Save failed — '+err.message);
+      loadPlayerProg(pid);
+      toast('Updated ✓');
+    });
   });
 }
 
