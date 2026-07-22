@@ -579,7 +579,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
   </main>
 
-  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.15</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
+  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.16</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
 
   <nav class="nav">
     <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
@@ -600,7 +600,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 </div>
 
 <script>
-const APP_VERSION = '6.15';
+const APP_VERSION = '6.16';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697'; // admin bootstrap hash
 const _ADMIN_EMAIL = 's.w.gajewski@gmail.com';
 const _AK = 'jfc-auth-v3';
@@ -1358,9 +1358,11 @@ function renderPlayerProg(pid,notes){
           <button style="background:none;border:none;color:var(--t3);font-size:13px;cursor:pointer;padding:2px 6px;border-radius:5px" onclick="delPlayerProg('${pid}','${n.id}')">✕</button>
         </div>`:''}
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
         ${n.rating?`<span class="prog-chip ${_RATING_CLS[n.rating]||''}">${_RATING_LABEL[n.rating]||n.rating}</span>`:''}
         ${parseInt(n.goals)?`<span class="prog-chip prog-chip-goals">⚽ ${n.goals} goal${parseInt(n.goals)!==1?'s':''}</span>`:''}
+        ${!n.rating&&n.text?`<span style="font-size:12px;color:var(--t2);line-height:1.55;width:100%">${x(n.text)}</span>`:''}
+        ${!n.rating&&!n.text?`<span style="font-size:11px;color:var(--t3);font-style:italic">No rating recorded</span>`:''}
       </div>
     </div>`).join('');
   el.innerHTML=html;
