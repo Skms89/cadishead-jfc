@@ -579,7 +579,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 
   </main>
 
-  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.13</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
+  <div class="app-ver-footer">⚽ Cadishead JFC Coach App &nbsp;·&nbsp; v<span id="ftr-ver">6.14</span> &nbsp;·&nbsp; <span id="ftr-sess">—</span> sessions recorded</div>
 
   <nav class="nav">
     <button class="nb on"  data-p="home"    onclick="tab('home')"><span class="ni">🏠</span>Home</button>
@@ -600,7 +600,7 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 </div>
 
 <script>
-const APP_VERSION = '6.13';
+const APP_VERSION = '6.14';
 const _CH = '20f609c88d51d53b84f89d0e214326178c93b8b98f991e957d51c3f4ab788697'; // admin bootstrap hash
 const _ADMIN_EMAIL = 's.w.gajewski@gmail.com';
 const _AK = 'jfc-auth-v3';
@@ -1203,8 +1203,13 @@ function savePlayerEdit(pid){
 // ── SQUAD ─────────────────────────────────────────────────────────────────────
 function renderSquad(){
   if(!_players.length){document.getElementById('squad-list').innerHTML='<div class="empty"><div class="empty-i">👥</div><p>Loading squad…</p></div>';return;}
+  const visiblePlayers=_role==='coach'?_players:_players.filter(p=>_user&&p.id===_user.childId);
+  if(_role==='parent'&&!visiblePlayers.length){
+    document.getElementById('squad-list').innerHTML='<div class="empty"><div class="empty-i">👤</div><p>Your child\'s profile will appear here once the coach has linked your account.</p></div>';
+    return;
+  }
   const grps={Nursery:[],Reception:[],['Year 1']:[]};
-  _players.forEach(p=>{const g=p.group||'Reception';if(!grps[g])grps[g]=[];grps[g].push(p);});
+  visiblePlayers.forEach(p=>{const g=p.group||'Reception';if(!grps[g])grps[g]=[];grps[g].push(p);});
   let html='';
   for(const[g,ps]of Object.entries(grps)){
     if(!ps.length)continue;
@@ -1271,7 +1276,7 @@ function renderSquad(){
   }
   document.getElementById('squad-list').innerHTML=html;
   const today=iso(new Date());
-  _players.forEach(p=>{const el=document.getElementById('pd-'+p.id);if(el)el.value=today});
+  visiblePlayers.forEach(p=>{const el=document.getElementById('pd-'+p.id);if(el)el.value=today});
 }
 
 function togglePlayer(pid){
@@ -1287,6 +1292,7 @@ function togglePlayer(pid){
     if(canSeeDetails){
       renderPlayerAttSummary(pid);
       if(_db)loadPlayerProg(pid);
+      if(_role==='parent'){const pnw=document.getElementById('pn-wrap-'+pid);if(pnw)pnw.style.display='none';}
     } else {
       document.getElementById('pa-'+pid).innerHTML='<div style="font-size:12px;color:var(--t3);padding:8px 0;text-align:center">🔒 Attendance visible to this player\'s parent only</div>';
       const pnw=document.getElementById('pn-wrap-'+pid);if(pnw)pnw.style.display='none';
@@ -1346,10 +1352,15 @@ function renderPlayerProg(pid,notes){
     <span class="prog-goals-total">⚽ ${totalGoals} goal${totalGoals!==1?'s':''} total</span>
   </div>`;
   html+=notes.map(n=>`
-    <div class="pg-item">
-      <button class="pg-del" onclick="delPlayerProg('${pid}','${n.id}')">✕</button>
-      <div class="pg-date">${n.date?disp(n.date):new Date(n.ts).toLocaleDateString('en-GB')}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:5px">
+    <div class="pg-item" id="pi-${n.id}" data-rating="${n.rating||''}" data-goals="${parseInt(n.goals)||0}" data-date="${n.date||''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div class="pg-date" style="margin:0">${n.date?disp(n.date):new Date(n.ts).toLocaleDateString('en-GB')}</div>
+        ${_role==='coach'?`<div style="display:flex;gap:4px;flex-shrink:0">
+          <button style="background:none;border:none;color:var(--t2);font-size:13px;cursor:pointer;padding:2px 6px;border-radius:5px" onclick="editPlayerProg('${pid}','${n.id}')">✏️</button>
+          <button style="background:none;border:none;color:var(--t3);font-size:13px;cursor:pointer;padding:2px 6px;border-radius:5px" onclick="delPlayerProg('${pid}','${n.id}')">✕</button>
+        </div>`:''}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
         ${n.rating?`<span class="prog-chip ${_RATING_CLS[n.rating]||''}">${_RATING_LABEL[n.rating]||n.rating}</span>`:''}
         ${parseInt(n.goals)?`<span class="prog-chip prog-chip-goals">⚽ ${n.goals} goal${parseInt(n.goals)!==1?'s':''}</span>`:''}
       </div>
@@ -1374,6 +1385,47 @@ function savePlayerProg(pid){
 function delPlayerProg(pid,nid){
   if(!confirm('Delete this record?'))return;
   _db.ref('football/progress/'+pid+'/'+nid).remove(()=>loadPlayerProg(pid));
+}
+
+function editPlayerProg(pid,nid){
+  const item=document.getElementById('pi-'+nid);if(!item)return;
+  const rating=item.dataset.rating||'';
+  const goals=parseInt(item.dataset.goals)||0;
+  const btnCls=(r)=>rating===r?` active-${r}`:'';
+  item.innerHTML=`
+    <div class="prog-btns" id="edit-btns-${nid}">
+      <button class="prog-btn${btnCls('outstanding')}" data-r="outstanding" onclick="setEditRating('${nid}','outstanding')">🌟 Outstanding — really stood out today</button>
+      <button class="prog-btn${btnCls('good')}" data-r="good" onclick="setEditRating('${nid}','good')">👍 Good session — showed great effort</button>
+      <button class="prog-btn${btnCls('building')}" data-r="building" onclick="setEditRating('${nid}','building')">💪 Building nicely — keep it up!</button>
+    </div>
+    <input type="hidden" id="edit-r-${nid}" value="${rating}">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <label style="font-size:13px;color:var(--t2);white-space:nowrap;flex-shrink:0">⚽ Goals scored:</label>
+      <input class="fi" type="number" id="edit-g-${nid}" min="0" max="20" value="${goals}" style="width:80px;margin:0;text-align:center;padding:8px 10px">
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="btn sm green" onclick="saveProgEdit('${pid}','${nid}')">Save</button>
+      <button class="btn sm ghost" onclick="loadPlayerProg('${pid}')">Cancel</button>
+    </div>`;
+}
+
+function setEditRating(nid,rating){
+  document.getElementById('edit-r-'+nid).value=rating;
+  document.querySelectorAll('#edit-btns-'+nid+' .prog-btn').forEach(b=>{
+    b.className='prog-btn';
+    if(b.dataset.r===rating)b.classList.add('active-'+rating);
+  });
+}
+
+function saveProgEdit(pid,nid){
+  const rating=document.getElementById('edit-r-'+nid).value;
+  const goals=parseInt(document.getElementById('edit-g-'+nid).value)||0;
+  if(!rating)return toast('Please select a rating first');
+  _db.ref('football/progress/'+pid+'/'+nid).update({rating,goals},err=>{
+    if(err)return toast('Save failed — '+err.message);
+    loadPlayerProg(pid);
+    toast('Updated ✓');
+  });
 }
 
 function openHistSession(date){
